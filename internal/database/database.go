@@ -20,7 +20,7 @@ func ConnectDatabase() (*Database, error) {
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
 		os.Getenv("DB_NAME"),
-		os.Getenv("DB_SSLMODE"),
+		os.Getenv("DB_SSLMODE"),	
 	)
 
 	db, err := sql.Open("postgres", dsn)
