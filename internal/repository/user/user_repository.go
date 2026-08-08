@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	dto "konsera-backend/internal/DTO/user"
 	user "konsera-backend/internal/models"
+	"time"
 )
 
 type UserRepository struct {
@@ -42,4 +43,27 @@ func (r *UserRepository) CreateUser(ctx context.Context, user *user.User) (res *
 	}
 
 	return res, nil
+}
+
+func (r *UserRepository) CreateOTP(ctx context.Context, profileID int, code string) error {
+	query := `
+		INSERT INTO otp_codes (
+			profile_id, code,  expires_at, created_at, 
+		) VALUES ($1, $2, $3, $4)
+	`
+	_, err := r.db.ExecContext(ctx, query, profileID, code, time.Now().Add(5*time.Minute), time.Now())
+	return err
+}
+
+func (r *UserRepository) VerifyOTP(ctx context.Context, profileID int, code string) (bool, error) {
+	query := `
+		SELECT COUNT(*) FROM otp_codes
+		WHERE profile_id = $1 AND code = $2 AND expires_at > NOW()
+	`
+	var count int
+	err := r.db.QueryRowContext(ctx, query, profileID, code).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }

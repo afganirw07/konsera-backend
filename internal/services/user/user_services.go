@@ -2,7 +2,7 @@ package user
 
 import (
 	"context"
-	utils "konsera-backend/internal/utils"
+	"fmt"
 	dto "konsera-backend/internal/DTO/user"
 	userRepo "konsera-backend/internal/repository/user"
 )
@@ -16,6 +16,10 @@ func NewUserService(repo *userRepo.UserRepository) *UserService {
 }
 
 func (s *UserService) CreateUser(ctx context.Context, user *dto.UserRequest) (*dto.UserResponse, error) {
-	
+	// validate user input
+	if user.Email == "" || user.Phone == "" || user.Password == "" {
+		return nil, fmt.Errorf("[ERROR] Missing required fields")
+	}
 
+	return nil, nil
 }
