@@ -1,4 +1,4 @@
-package generatorEmail
+package utils
 
 import (
 	"math/rand"
