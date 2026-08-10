@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify your login</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed; background-color: #f8f9fa; padding: 40px 10px;">
+    <tr>
+      <td align="center">
+        <!-- Card Container -->
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 520px; background-color: #ffffff; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+          
+          <!-- Main Content Area -->
+          <tr>
+            <td style="padding: 32px 32px 24px 32px;">
+              
+              <!-- Logo / App Name -->
+              <table border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+                <tr>
+                  <td style="vertical-align: middle;"></td>
+                  <td style="vertical-align: middle; font-size: 20px; font-weight: bold; color: #1a1a1a; letter-spacing: -0.3px;">
+                    Konsera
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Title & Subtitle -->
+              <h1 style="margin: 0 0 12px 0; font-size: 22px; font-weight: 600; color: #111111; letter-spacing: -0.5px;">Verify your login</h1>
+              <p style="margin: 0 0 24px 0; font-size: 13px; line-height: 1.5; color: #555555;">
+                We detected a new sign-in to your account. If this was you, confirm below to continue.
+              </p>
+
+              <!-- Device Info Box -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fafafa; border: 1px solid #f0f0f0; border-radius: 6px; margin-bottom: 20px; font-size: 11px;">
+                <tr>
+                  <td style="padding: 14px 16px 8px 16px; color: #888888; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">DEVICE</td>
+                  <td align="right" style="padding: 14px 16px 8px 16px; color: #111111; font-weight: 500;">{{.Device}}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 16px; color: #888888; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">LOCATION</td>
+                  <td align="right" style="padding: 8px 16px; color: #111111; font-weight: 500;">{{.Location}}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 16px; color: #888888; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">IP ADDRESS</td>
+                  <td align="right" style="padding: 8px 16px; color: #111111; font-weight: 500;">{{.IPAddress}}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 16px 14px 16px; color: #888888; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">TIME</td>
+                  <td align="right" style="padding: 8px 16px 14px 16px; color: #111111; font-weight: 500;">{{.Time}}</td>
+                </tr>
+              </table>
+
+              <!-- Action Button -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 24px;">
+                <tr>
+                  <td align="center">
+                    <a href="{{.VerifyURL}}" target="_blank" style="display: block; width: 100%; background-color: #2b2b2b; color: #ffffff; text-decoration: none; padding: 12px 0; font-size: 13px; font-weight: 500; border-radius: 6px; text-align: center;">
+                      Verify this login
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- OTP Manual Section -->
+              <p style="margin: 0 0 12px 0; text-align: center; font-size: 12px; color: #777777;">or enter this OTP code manually</p>
+              <h2 style="margin: 0 0 6px 0; text-align: center; font-size: 32px; font-weight: bold; color: #111111; letter-spacing: 4px;">{{.OTPCode}}</h2>
+              <p style="margin: 0 0 24px 0; text-align: center; font-size: 11px; color: #999999;">Expires in {{.OTPExpiry}} minutes</p>
+
+              <!-- Warning Callout Box -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fffaf5; border: 1px solid #ffeacc; border-radius: 6px; margin-bottom: 8px;">
+                <tr>
+                  <td style="padding: 14px 16px; font-size: 12px; color: #664d03; line-height: 1.5;">
+                    <span style="font-size: 14px; margin-right: 4px; vertical-align: middle;">⚠️</span>
+                    If you didn't attempt this login, your account may be compromised. <a href="{{.SecureAccountURL}}" style="color: #664d03; text-decoration: underline; font-weight: 500;">Secure your account &rarr;</a>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Footer Area -->
+          <tr>
+            <td style="background-color: #fafafa; border-top: 1px solid #f0f0f0; padding: 24px 32px; text-align: center; font-size: 11px; color: #888888; line-height: 1.6;">
+              You are receiving this because of a login attempt on your account.<br>
+              <a href="{{.UnsubscribeURL}}" style="color: #888888; text-decoration: underline; margin: 0 4px;">Unsubscribe</a> &bull; 
+              <a href="{{.PrivacyURL}}" style="color: #888888; text-decoration: underline; margin: 0 4px;">Privacy</a> &bull; 
+              <a href="{{.HelpCenterURL}}" style="color: #888888; text-decoration: underline; margin: 0 4px;">Help Center</a>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

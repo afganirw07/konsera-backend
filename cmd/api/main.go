@@ -1,38 +1,29 @@
 package main
 
 import (
-	database "konsera-backend/internal/database"
 	"log"
-	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+
+	"konsera-backend/internal/server"
 )
 
 func main() {
-
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("[ENV] Error loading .env file")
+		log.Println("[ENV] .env file not found")
 	}
 
-	db, err := database.ConnectDatabase()
+	app, err := server.New()
 	if err != nil {
-		log.Fatal("[Database] Failed to connect to database:", err)
+		log.Fatal("[Server] Failed to initialize:", err)
 	}
 
-	if err := db.Ping(); err != nil {
-		log.Fatal("[Database] Failed to ping database:", err)
+	defer app.DB.Close()
+
+	log.Println("[Database] Database connected")
+	log.Println("[Server] Starting server on :8080")
+
+	if err := app.Run(); err != nil {
+		log.Fatal("[Server] Failed to start:", err)
 	}
-
-	log.Println("[Database] Database Connect")
-
-	defer db.Close()
-
-	router := gin.Default()
-	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "pong",
-		})
-	})
-	log.Fatal("[Server] Failed to start server:", router.Run(":8080"))
 }
