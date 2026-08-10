@@ -192,3 +192,27 @@ func (r *UserRepository) VerifyOTP(ctx context.Context, profileID string, code s
 	}
 	return count > 0, nil
 }
+
+func (r *UserRepository) CheckEmailExists(ctx context.Context, email string) (bool, error) {
+	query := ` 
+		SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)
+	`
+	var exists bool
+	err := r.db.QueryRowContext(ctx, query, email).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
+func (r *UserRepository) CheckPhoneExists(ctx context.Context, phone string) (bool, error) {
+	query := `
+		SELECT EXISTS(SELECT 1 FROM users WHERE phone = $1)
+	`
+	var exists bool
+	err := r.db.QueryRowContext(ctx, query, phone).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
