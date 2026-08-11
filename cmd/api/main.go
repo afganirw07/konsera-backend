@@ -4,8 +4,8 @@ import (
 	"log"
 
 	"github.com/joho/godotenv"
-
 	"konsera-backend/internal/server"
+	_ "konsera-backend/docs"
 )
 
 func main() {
@@ -25,5 +25,6 @@ func main() {
 
 	if err := app.Run(); err != nil {
 		log.Fatal("[Server] Failed to start:", err)
+
 	}
 }

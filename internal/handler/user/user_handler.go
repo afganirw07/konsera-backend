@@ -23,6 +23,16 @@ func NewUserHandler(
 	}
 }
 
+
+// @Summary Create a new user
+// @Description Create a new user with the provided information
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param user body dto.CreateUserRequest true "User information"
+// @Success 201 {object} dto.UserResponse "User created successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request or email/phone already exists"
+// @Router /auth/register [post]
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	var req dto.CreateUserRequest
 

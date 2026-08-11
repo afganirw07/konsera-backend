@@ -1,0 +1,69 @@
+definitions:
+  konsera-backend_internal_DTO_user.CreateUserRequest:
+    properties:
+      email:
+        type: string
+      full_name:
+        minLength: 2
+        type: string
+      password:
+        minLength: 8
+        type: string
+      phone:
+        type: string
+    required:
+    - email
+    - full_name
+    - password
+    - phone
+    type: object
+  konsera-backend_internal_DTO_user.UserResponse:
+    properties:
+      auth_provider:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      profile_id:
+        type: string
+      provider_uid:
+        type: string
+      status:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user with the provided information
+      parameters:
+      - description: User information
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/konsera-backend_internal_DTO_user.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User created successfully
+          schema:
+            $ref: '#/definitions/konsera-backend_internal_DTO_user.UserResponse'
+        "400":
+          description: Invalid request or email/phone already exists
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a new user
+      tags:
+      - Users
+swagger: "2.0"

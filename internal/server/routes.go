@@ -4,7 +4,8 @@ import (
 	"database/sql"
 
 	"github.com/gin-gonic/gin"
-
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	config "konsera-backend/internal/config"
 	database "konsera-backend/internal/database"
 	userHandler "konsera-backend/internal/handler/user"
@@ -65,6 +66,12 @@ func New() (*Server, error) {
 			"message": "pong",
 		})
 	})
+
+	router.GET(
+	"/swagger/*any",
+	ginSwagger.WrapHandler(swaggerFiles.Handler),
+)
+
 
 	authGroup := router.Group("/auth")
 	{
