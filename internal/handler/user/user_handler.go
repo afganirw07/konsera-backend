@@ -54,6 +54,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	user, err := h.service.CreateUser(
 		c.Request.Context(),
 		&req,
+		c.GetHeader("User-Agent"),
 		emailMeta,
 	)
 

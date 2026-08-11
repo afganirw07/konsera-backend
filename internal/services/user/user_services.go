@@ -27,6 +27,7 @@ func NewUserService(repo *userRepo.UserRepository, emailService *emailService.Se
 func (s *UserService) CreateUser(
 	ctx context.Context,
 	user *dto.CreateUserRequest,
+	provider string,
 	emailMeta *emailDTO.RegisterOTPEmailMeta,
 ) (*dto.UserResponse, error) {
 
@@ -75,13 +76,14 @@ func (s *UserService) CreateUser(
 	providerUID := utils.GenerateRandomString(6)
 
 	newUser := &models.User{
-		Email:       user.Email,
-		Phone:       &phone,
-		Password:    &hashedPassword,
-		Status:      "pending_verification",
-		ProviderUID: &providerUID,
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		Email:        user.Email,
+		Phone:        &phone,
+		Password:     &hashedPassword,
+		Status:       "pending_verification",
+		AuthProvider: &provider,
+		ProviderUID:  &providerUID,
+		CreatedAt:    now,
+		UpdatedAt:    now,
 	}
 
 	newProfile := &models.UserProfile{

@@ -203,6 +203,30 @@ func (r *UserRepository) VerifyOTP(
 	return count > 0, nil
 }
 
+
+func (r *UserRepository) UpdateUserStatusTx(
+	ctx context.Context,
+	tx *sql.Tx,
+	userID uuid.UUID,
+	status string,
+) error {
+	query := `
+		UPDATE users
+		SET email_verified_at = $1, updated_at = $2
+		WHERE id = $3
+	`
+
+	_, err := tx.ExecContext(
+		ctx,
+		query,
+		status,
+		time.Now(),
+		userID,
+	)
+
+	return err
+}
+
 func (r *UserRepository) CheckEmailExists(
 	ctx context.Context,
 	email string,
