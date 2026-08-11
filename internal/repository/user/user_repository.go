@@ -247,6 +247,31 @@ func (r *UserRepository) CreateOTPTx(
 	return err
 }
 
+func (r *UserRepository) ResendOTP(
+	ctx context.Context,
+	profileID string,
+	code int,
+) error {
+	query := `
+		UPDATE otp_codes
+		SET code = $1, expires_at = $2, created_at = $3
+		WHERE profile_id = $4
+	`
+
+	now := time.Now()
+
+	_, err := r.db.ExecContext(
+		ctx,
+		query,
+		code,
+		now.Add(5*time.Minute),
+		now,
+		profileID,
+	)
+
+	return err
+}
+
 func (r *UserRepository) VerifyOTP(
 	ctx context.Context,
 	profileID string,
@@ -352,4 +377,48 @@ func (r *UserRepository) CheckPhoneExists(
 	}
 
 	return exists, nil
+}
+
+
+func (r *UserRepository) GetUserByProfileID(
+	ctx context.Context,
+	profileID string,
+) (*user.User, error) {
+	query := `
+		SELECT u.id, u.email, u.phone, u.password, u.auth_provider,
+		       u.provider_uid, u.status, u.email_verified_at,
+		       u.phone_verified_at, u.last_login_at, u.created_at,
+		       u.updated_at, u.deleted_at
+		FROM users u
+		JOIN user_profiles up ON u.id = up.user_id
+		WHERE up.id = $1
+	`
+
+	user := &user.User{}
+
+	err := r.db.QueryRowContext(
+		ctx,
+		query,
+		profileID,
+	).Scan(
+		&user.ID,
+		&user.Email,
+		&user.Phone,
+		&user.Password,
+		&user.AuthProvider,
+		&user.ProviderUID,
+		&user.Status,
+		&user.EmailVerifiedAt,
+		&user.PhoneVerifiedAt,
+		&user.LastLoginAt,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+		&user.DeletedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }

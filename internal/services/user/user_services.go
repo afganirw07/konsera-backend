@@ -261,3 +261,64 @@ func (s *UserService) VerifyOTP(
 
 	return true, nil
 }
+
+func (s *UserService) ResendOTP(
+	ctx context.Context,
+	profileID string,
+	emailMeta *emailDTO.RegisterOTPEmailMeta,
+) error {
+	if profileID == "" {
+		return fmt.Errorf("[ERROR] Missing profile ID")
+	}
+
+	otpCode, err := utils.GenerateOTP(6)
+	if err != nil {
+		return fmt.Errorf(
+			"[ERROR] Failed to generate OTP: %w",
+			err,
+		)
+	}
+
+	if err := s.repo.ResendOTP(ctx, profileID, otpCode); err != nil {
+		return fmt.Errorf(
+			"[ERROR] Failed to resend OTP: %w",
+			err,
+		)
+	}
+
+	user, err := s.repo.GetUserByProfileID(ctx, profileID)
+	if err != nil {
+		return fmt.Errorf(
+			"[ERROR] Failed to get user by profile ID: %w",
+			err,
+		)
+	}
+
+	konseraFEURL := os.Getenv("KONSERA_FE_URL")
+
+	emailData := emailDTO.RegisterOTPEmailData{
+		Device:           emailMeta.Device,
+		Location:         emailMeta.Location,
+		IPAddress:        emailMeta.IPAddress,
+		Time:             emailMeta.Time,
+		VerifyURL:        fmt.Sprintf("%sauth/verify-email", konseraFEURL),
+		OTPCode:          otpCode,
+		OTPExpiry:        5,
+		SecureAccountURL: fmt.Sprintf("%ssecurity", konseraFEURL),
+		UnsubscribeURL:   fmt.Sprintf("%sunsubscribe", konseraFEURL),
+		PrivacyURL:       fmt.Sprintf("%sprivacy", konseraFEURL),
+		HelpCenterURL:    fmt.Sprintf("%shelp", konseraFEURL),
+	}
+
+	if err := s.emailService.SendRegisterOTP(
+		user.Email,
+		emailData,
+	); err != nil {
+		return fmt.Errorf(
+			"failed to send verification email: %w",
+			err,
+		)
+	}
+
+	return nil
+}

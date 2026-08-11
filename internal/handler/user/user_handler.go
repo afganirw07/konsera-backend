@@ -169,3 +169,49 @@ func (h *UserHandler) VerifyOTPParams(c *gin.Context) {
 		"message": "OTP verified successfully. Your account is now active.",
 	})
 }
+
+
+// @Summary Resend OTP
+// @Description Resend the OTP code for user account activation
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param otp body dto.ResendOTPRequest true "Resend OTP information"
+// @Success 200 {object} map[string]interface{} "OTP resent successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request or failed to resend OTP"
+// @Router /auth/resend-otp [post]
+func (h *UserHandler) ResendOTP(c *gin.Context) {
+	var req dto.ResendOTPRequest
+	
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Invalid request",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	emailMeta := &emailDTO.RegisterOTPEmailMeta{
+		Device:    c.GetHeader("User-Agent"),
+		IPAddress: c.ClientIP(),
+		Location:  "Indonesia",
+		Time:      time.Now().Format("02 Jan 2006, 15:04:05"),
+	}
+
+	err := h.service.ResendOTP(
+		c.Request.Context(),
+		req.ProfileID,
+		emailMeta,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "OTP resent successfully. Please check your email.",
+	})
+}

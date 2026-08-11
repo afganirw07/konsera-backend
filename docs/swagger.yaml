@@ -17,6 +17,13 @@ definitions:
     - password
     - phone
     type: object
+  konsera-backend_internal_DTO_user.ResendOTPRequest:
+    properties:
+      profile_id:
+        type: string
+    required:
+    - profile_id
+    type: object
   konsera-backend_internal_DTO_user.UserResponse:
     properties:
       auth_provider:
@@ -74,6 +81,34 @@ paths:
             additionalProperties: true
             type: object
       summary: Create a new user
+      tags:
+      - Users
+  /auth/resend-otp:
+    post:
+      consumes:
+      - application/json
+      description: Resend the OTP code for user account activation
+      parameters:
+      - description: Resend OTP information
+        in: body
+        name: otp
+        required: true
+        schema:
+          $ref: '#/definitions/konsera-backend_internal_DTO_user.ResendOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OTP resent successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request or failed to resend OTP
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Resend OTP
       tags:
       - Users
   /auth/verify-otp:

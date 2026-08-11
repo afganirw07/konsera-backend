@@ -56,6 +56,48 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/resend-otp": {
+            "post": {
+                "description": "Resend the OTP code for user account activation",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Resend OTP",
+                "parameters": [
+                    {
+                        "description": "Resend OTP information",
+                        "name": "otp",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/konsera-backend_internal_DTO_user.ResendOTPRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OTP resent successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or failed to resend OTP",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/auth/verify-otp": {
             "post": {
                 "description": "Verify the OTP code for user account activation",
@@ -168,6 +210,17 @@ const docTemplate = `{
                     "minLength": 8
                 },
                 "phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "konsera-backend_internal_DTO_user.ResendOTPRequest": {
+            "type": "object",
+            "required": [
+                "profile_id"
+            ],
+            "properties": {
+                "profile_id": {
                     "type": "string"
                 }
             }

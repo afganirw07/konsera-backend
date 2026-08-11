@@ -23,3 +23,6 @@ type VerifyOTPRequest struct {
 	Code      int    `json:"code" binding:"required"`
 }
 
+type ResendOTPRequest struct {
+	ProfileID string `json:"profile_id" binding:"required"`
+}
