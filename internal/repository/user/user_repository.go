@@ -125,6 +125,31 @@ func (r *UserRepository) CreateRoleTx(
 	).Scan(&role.ID)
 }
 
+func (r *UserRepository) GetRoleByNameTx(
+	ctx context.Context,
+	tx *sql.Tx,
+	name string,
+) (*user.Role, error) {
+	query := `
+		SELECT id, name, description, created_at
+		FROM roles
+		WHERE name = $1
+	`
+
+	role := &user.Role{}
+	err := tx.QueryRowContext(ctx, query, name).Scan(
+		&role.ID,
+		&role.Name,
+		&role.Description,
+		&role.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return role, nil
+}
+
 func (r *UserRepository) CreateUserRoleTx(
 	ctx context.Context,
 	tx *sql.Tx,
