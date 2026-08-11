@@ -6,6 +6,7 @@ import (
 	htmltemplate "html/template"
 	"log"
 	"net/smtp"
+	"time"
 
 	dto "konsera-backend/internal/DTO/email"
 	templates "konsera-backend/internal/templates"
@@ -33,11 +34,8 @@ func NewService(config Config) *Service {
 	}
 }
 
-func (s *Service) buildEmailFromTemplate(
-	templateName string,
-	data interface{},
-) (string, error) {
-	templatePath := fmt.Sprintf("email/%s", templateName)
+func (s *Service) buildEmailFromTemplate(templateName string, data interface{}) (string, error) {
+	templatePath := fmt.Sprintf("gmail/%s", templateName)
 
 	funcMap := htmltemplate.FuncMap{
 		"formatRupiah": func(amount float64) string {
@@ -82,11 +80,7 @@ func (s *Service) buildEmailFromTemplate(
 	return output.String(), nil
 }
 
-func (s *Service) SendEmail(
-	to string,
-	subject string,
-	htmlBody string,
-) error {
+func (s *Service) SendEmail(to string, subject string, htmlBody string) error {
 	auth := smtp.PlainAuth(
 		"",
 		s.config.SMTPUsername,
@@ -110,12 +104,21 @@ func (s *Service) SendEmail(
 		s.config.SMTPPort,
 	)
 
+	start := time.Now()
+
+	log.Printf("[EMAIL_SERVICE] Sending email to %s...", to)
+
 	err := smtp.SendMail(
 		address,
 		auth,
 		s.config.FromEmail,
 		[]string{to},
 		msg,
+	)
+
+	log.Printf(
+		"[EMAIL_SERVICE] SMTP finished in %v",
+		time.Since(start),
 	)
 
 	if err != nil {
@@ -136,20 +139,13 @@ func (s *Service) SendEmail(
 	return nil
 }
 
-func (s *Service) SendLoginOTP(
-	to string,
-	data dto.LoginOTPEmailData,
-) error {
-	htmlBody, err := s.buildEmailFromTemplate(
-		"otp_register.html",
-		data,
-	)
-
+func (s *Service) SendRegisterOTP(to string, data dto.RegisterOTPEmailData) error {
+	htmlBody, err := s.buildEmailFromTemplate("otp_register.html", data)
 	if err != nil {
 		return err
 	}
 
-	subject := "Verify your login - Konsera"
+	subject := "Verify your email - Konsera"
 
 	if err := s.SendEmail(
 		to,

@@ -3,9 +3,10 @@ package user
 import (
 	"context"
 	"database/sql"
-	dto "konsera-backend/internal/DTO/user"
 	user "konsera-backend/internal/models"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type UserRepository struct {
@@ -16,25 +17,12 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-func (r *UserRepository) CreateUser(
+func (r *UserRepository) CreateUserTx(
 	ctx context.Context,
+	tx *sql.Tx,
 	user *user.User,
-	profile *user.UserProfile,
-) (*dto.UserResponse, error) {
-
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		}
-	}()
-
-	// for users
-	queryUser := `
+) error {
+	query := `
 		INSERT INTO users (
 			email,
 			phone,
@@ -56,9 +44,9 @@ func (r *UserRepository) CreateUser(
 		RETURNING id
 	`
 
-	err = tx.QueryRowContext(
+	return tx.QueryRowContext(
 		ctx,
-		queryUser,
+		query,
 		user.Email,
 		user.Phone,
 		user.Password,
@@ -72,13 +60,14 @@ func (r *UserRepository) CreateUser(
 		user.UpdatedAt,
 		user.DeletedAt,
 	).Scan(&user.ID)
+}
 
-	if err != nil {
-		return nil, err
-	}
-
-	// for user_profiles
-	queryProfile := `
+func (r *UserRepository) CreateUserProfileTx(
+	ctx context.Context,
+	tx *sql.Tx,
+	profile *user.UserProfile,
+) error {
+	query := `
 		INSERT INTO user_profiles (
 			user_id,
 			full_name,
@@ -98,10 +87,10 @@ func (r *UserRepository) CreateUser(
 		RETURNING id
 	`
 
-	err = tx.QueryRowContext(
+	return tx.QueryRowContext(
 		ctx,
-		queryProfile,
-		user.ID,
+		query,
+		profile.UserID,
 		profile.FullName,
 		profile.AvatarURL,
 		profile.DateOfBirth,
@@ -112,27 +101,12 @@ func (r *UserRepository) CreateUser(
 		profile.PostalCode,
 		profile.Country,
 	).Scan(&profile.ID)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if err = tx.Commit(); err != nil {
-		return nil, err
-	}
-
-	return &dto.UserResponse{
-		ID:            user.ID.String(),
-		Name:          profile.FullName,
-		Email:         user.Email,
-		Phone:         user.Phone,
-		Auth_Provider: user.AuthProvider,
-		Provider_UID:  user.ProviderUID,
-		Status:        user.Status,
-	}, nil
 }
 
-func (r *UserRepository) CreateUserPreference(ctx context.Context, req *user.UserPreference) (*user.UserPreference, error) {
+func (r *UserRepository) CreateUserPreference(
+	ctx context.Context,
+	req *user.UserPreference,
+) (*user.UserPreference, error) {
 	query := `
 		INSERT INTO user_preferences (
 			user_id,
@@ -170,49 +144,115 @@ func (r *UserRepository) CreateUserPreference(ctx context.Context, req *user.Use
 	return req, nil
 }
 
-func (r *UserRepository) CreateOTP(ctx context.Context, profileID string, code string) error {
+func (r *UserRepository) CreateOTPTx(
+	ctx context.Context,
+	tx *sql.Tx,
+	profileID uuid.UUID,
+	code int,
+) error {
 	query := `
 		INSERT INTO otp_codes (
-			profile_id, code,  expires_at, created_at, 
-		) VALUES ($1, $2, $3, $4)
+			profile_id,
+			code,
+			expires_at,
+			created_at
+		)
+		VALUES ($1, $2, $3, $4)
 	`
-	_, err := r.db.ExecContext(ctx, query, profileID, code, time.Now().Add(5*time.Minute), time.Now())
+
+	now := time.Now()
+
+	_, err := tx.ExecContext(
+		ctx,
+		query,
+		profileID,
+		code,
+		now.Add(5*time.Minute),
+		now,
+	)
+
 	return err
 }
 
-func (r *UserRepository) VerifyOTP(ctx context.Context, profileID string, code string) (bool, error) {
+func (r *UserRepository) VerifyOTP(
+	ctx context.Context,
+	profileID string,
+	code string,
+) (bool, error) {
 	query := `
-		SELECT COUNT(*) FROM otp_codes
-		WHERE profile_id = $1 AND code = $2 AND expires_at > NOW()
+		SELECT COUNT(*)
+		FROM otp_codes
+		WHERE profile_id = $1
+		  AND code = $2
+		  AND expires_at > NOW()
 	`
+
 	var count int
-	err := r.db.QueryRowContext(ctx, query, profileID, code).Scan(&count)
+
+	err := r.db.QueryRowContext(
+		ctx,
+		query,
+		profileID,
+		code,
+	).Scan(&count)
+
 	if err != nil {
 		return false, err
 	}
+
 	return count > 0, nil
 }
 
-func (r *UserRepository) CheckEmailExists(ctx context.Context, email string) (bool, error) {
-	query := ` 
-		SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)
+func (r *UserRepository) CheckEmailExists(
+	ctx context.Context,
+	email string,
+) (bool, error) {
+	query := `
+		SELECT EXISTS(
+			SELECT 1
+			FROM users
+			WHERE email = $1
+		)
 	`
+
 	var exists bool
-	err := r.db.QueryRowContext(ctx, query, email).Scan(&exists)
+
+	err := r.db.QueryRowContext(
+		ctx,
+		query,
+		email,
+	).Scan(&exists)
+
 	if err != nil {
 		return false, err
 	}
+
 	return exists, nil
 }
 
-func (r *UserRepository) CheckPhoneExists(ctx context.Context, phone string) (bool, error) {
+func (r *UserRepository) CheckPhoneExists(
+	ctx context.Context,
+	phone string,
+) (bool, error) {
 	query := `
-		SELECT EXISTS(SELECT 1 FROM users WHERE phone = $1)
+		SELECT EXISTS(
+			SELECT 1
+			FROM users
+			WHERE phone = $1
+		)
 	`
+
 	var exists bool
-	err := r.db.QueryRowContext(ctx, query, phone).Scan(&exists)
+
+	err := r.db.QueryRowContext(
+		ctx,
+		query,
+		phone,
+	).Scan(&exists)
+
 	if err != nil {
 		return false, err
 	}
+
 	return exists, nil
 }

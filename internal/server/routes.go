@@ -7,7 +7,10 @@ import (
 
 	config "konsera-backend/internal/config"
 	database "konsera-backend/internal/database"
+	userHandler "konsera-backend/internal/handler/user"
+	userRepository "konsera-backend/internal/repository/user"
 	email "konsera-backend/internal/services/email"
+	userService "konsera-backend/internal/services/user"
 )
 
 type Server struct {
@@ -45,10 +48,13 @@ func New() (*Server, error) {
 	)
 
 	// REPOSITORY
+	userRepo := userRepository.NewUserRepository(db.DB)
 
 	// SERVICE
+	userService := userService.NewUserService(userRepo, emailService, db.DB)
 
 	// HANDLER
+	userHandler := userHandler.NewUserHandler(userService)
 
 	// ROUTER
 
@@ -59,6 +65,14 @@ func New() (*Server, error) {
 			"message": "pong",
 		})
 	})
+
+	authGroup := router.Group("/auth")
+	{
+		authGroup.POST(
+			"/register",
+			userHandler.CreateUser,
+		)
+	}
 
 	return &Server{
 		Router:       router,
