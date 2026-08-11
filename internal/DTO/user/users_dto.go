@@ -17,3 +17,9 @@ type UserResponse struct {
 	Provider_UID  *string `json:"provider_uid,omitempty"`
 	Status        string  `json:"status"`
 }
+
+type VerifyOTPRequest struct {
+	ProfileID string `json:"profile_id" binding:"required"`
+	Code      int    `json:"code" binding:"required"`
+}
+

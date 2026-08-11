@@ -3,15 +3,16 @@ package server
 import (
 	"database/sql"
 
-	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 	config "konsera-backend/internal/config"
 	database "konsera-backend/internal/database"
 	userHandler "konsera-backend/internal/handler/user"
 	userRepository "konsera-backend/internal/repository/user"
 	email "konsera-backend/internal/services/email"
 	userService "konsera-backend/internal/services/user"
+
+	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type Server struct {
@@ -68,10 +69,9 @@ func New() (*Server, error) {
 	})
 
 	router.GET(
-	"/swagger/*any",
-	ginSwagger.WrapHandler(swaggerFiles.Handler),
-)
-
+		"/swagger/*any",
+		ginSwagger.WrapHandler(swaggerFiles.Handler),
+	)
 
 	authGroup := router.Group("/auth")
 	{
@@ -79,6 +79,8 @@ func New() (*Server, error) {
 			"/register",
 			userHandler.CreateUser,
 		)
+		authGroup.POST("/verify-otp", userHandler.VerifyOTP)
+		authGroup.POST("/verify-otp/:profile_id/:code", userHandler.VerifyOTPParams)
 	}
 
 	return &Server{

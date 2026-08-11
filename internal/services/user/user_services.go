@@ -221,3 +221,43 @@ func (s *UserService) CreateUser(
 		Status:        newUser.Status,
 	}, nil
 }
+
+
+func (s *UserService) VerifyOTP(
+	ctx context.Context,
+	profileID string,
+	code int,
+) (bool, error) {
+	if profileID == "" {
+		return false, fmt.Errorf("[ERROR] Missing profile ID")
+	}
+
+	if code == 0 {
+		return false, fmt.Errorf("[ERROR] Missing OTP code")
+	}
+
+	isValid, err := s.repo.VerifyOTP(ctx, profileID, code)
+	if err != nil {
+		return false, fmt.Errorf(
+			"[ERROR] Failed to verify OTP: %w",
+			err,
+		)
+	}
+
+	if !isValid {
+		return false, fmt.Errorf("[ERROR] Invalid or expired OTP code")
+	}
+
+	if err := s.repo.UpdateUserStatus(
+		ctx,
+		profileID,
+		"active",
+	); err != nil {
+		return false, fmt.Errorf(
+			"[ERROR] Failed to update user status: %w",
+			err,
+		)
+	}
+
+	return true, nil
+}

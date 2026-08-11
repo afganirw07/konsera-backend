@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	user "konsera-backend/internal/models"
 	"time"
 
@@ -249,7 +250,7 @@ func (r *UserRepository) CreateOTPTx(
 func (r *UserRepository) VerifyOTP(
 	ctx context.Context,
 	profileID string,
-	code string,
+	code int,
 ) (bool, error) {
 	query := `
 		SELECT COUNT(*)
@@ -269,34 +270,35 @@ func (r *UserRepository) VerifyOTP(
 	).Scan(&count)
 
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("[OTP]failed to verify OTP: %w", err)
 	}
 
 	return count > 0, nil
 }
 
-func (r *UserRepository) UpdateUserStatusTx(
+func (r *UserRepository) UpdateUserStatus(
 	ctx context.Context,
-	tx *sql.Tx,
-	userID uuid.UUID,
+	userID string,
 	status string,
 ) error {
 	query := `
 		UPDATE users
-		SET email_verified_at = $1, updated_at = $2
-		WHERE id = $3
+		SET status = $1, email_verified_at = $2, updated_at = $3
+		WHERE id = $4
 	`
 
-	_, err := tx.ExecContext(
+	_, err := r.db.ExecContext(
 		ctx,
 		query,
 		status,
+		time.Now(),
 		time.Now(),
 		userID,
 	)
 
 	return err
 }
+
 
 func (r *UserRepository) CheckEmailExists(
 	ctx context.Context,

@@ -36,6 +36,16 @@ definitions:
       status:
         type: string
     type: object
+  konsera-backend_internal_DTO_user.VerifyOTPRequest:
+    properties:
+      code:
+        type: integer
+      profile_id:
+        type: string
+    required:
+    - code
+    - profile_id
+    type: object
 info:
   contact: {}
 paths:
@@ -64,6 +74,66 @@ paths:
             additionalProperties: true
             type: object
       summary: Create a new user
+      tags:
+      - Users
+  /auth/verify-otp:
+    post:
+      consumes:
+      - application/json
+      description: Verify the OTP code for user account activation
+      parameters:
+      - description: OTP verification information
+        in: body
+        name: otp
+        required: true
+        schema:
+          $ref: '#/definitions/konsera-backend_internal_DTO_user.VerifyOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OTP verified successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request or OTP verification failed
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Verify OTP
+      tags:
+      - Users
+  /auth/verify-otp/{profile_id}/{code}:
+    post:
+      consumes:
+      - application/json
+      description: Verify the OTP code for user account activation using path parameters
+      parameters:
+      - description: Profile ID
+        in: path
+        name: profile_id
+        required: true
+        type: string
+      - description: OTP Code
+        in: path
+        name: code
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OTP verified successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request or OTP verification failed
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Verify OTP via Path Parameters
       tags:
       - Users
 swagger: "2.0"
