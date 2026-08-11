@@ -56,3 +56,11 @@ type Role struct {
 	Description *string   `json:"description,omitempty"`
 	CreatedAt   time.Time `json:"created_at"`
 }
+
+
+type UserRole struct {
+	ID        uuid.UUID `json:"id"`
+	UserID    uuid.UUID `json:"user_id"`
+	RoleID    uuid.UUID `json:"role_id"`
+	AssignedAt time.Time `json:"assigned_at"`
+}

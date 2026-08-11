@@ -103,6 +103,53 @@ func (r *UserRepository) CreateUserProfileTx(
 	).Scan(&profile.ID)
 }
 
+func (r *UserRepository) CreateRoleTx(
+	ctx context.Context,
+	tx *sql.Tx,
+	role *user.Role,
+) error {
+	query := `
+		INSERT INTO roles (
+			name,
+			description
+		)
+		VALUES ($1, $2)
+		RETURNING id
+	`
+
+	return tx.QueryRowContext(
+		ctx,
+		query,
+		role.Name,
+		role.Description,
+	).Scan(&role.ID)
+}
+
+func (r *UserRepository) CreateUserRoleTx(
+	ctx context.Context,
+	tx *sql.Tx,
+	userRole *user.UserRole,
+) error {
+	query := `
+		INSERT INTO user_roles (
+			user_id,
+			role_id,
+			assigned_at
+		)
+		VALUES ($1, $2, $3)
+	`
+
+	_, err := tx.ExecContext(
+		ctx,
+		query,
+		userRole.UserID,
+		userRole.RoleID,
+		userRole.AssignedAt,
+	)
+
+	return err
+}
+
 func (r *UserRepository) CreateUserPreference(
 	ctx context.Context,
 	req *user.UserPreference,
@@ -202,7 +249,6 @@ func (r *UserRepository) VerifyOTP(
 
 	return count > 0, nil
 }
-
 
 func (r *UserRepository) UpdateUserStatusTx(
 	ctx context.Context,

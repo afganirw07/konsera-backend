@@ -92,6 +92,18 @@ func (s *UserService) CreateUser(
 		UpdatedAt: now,
 	}
 
+	newRole := &models.Role{
+		Name:        "customer",
+		Description: &[]string{"Customer Role"}[0],
+		CreatedAt:   now,
+	}
+
+	newUserRole := &models.UserRole{
+		UserID:     newUser.ID,
+		RoleID:     newRole.ID,
+		AssignedAt: now,
+	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -128,6 +140,28 @@ func (s *UserService) CreateUser(
 	); err != nil {
 		return nil, fmt.Errorf(
 			"[ERROR] Failed to create user profile: %w",
+			err,
+		)
+	}
+
+	if err := s.repo.CreateRoleTx(
+		ctx,
+		tx,
+		newRole,
+	); err != nil {
+		return nil, fmt.Errorf(
+			"[ERROR] Failed to create role: %w",
+			err,
+		)
+	}
+
+	if err := s.repo.CreateUserRoleTx(
+		ctx,
+		tx,
+		newUserRole,
+	); err != nil {
+		return nil, fmt.Errorf(
+			"[ERROR] Failed to create user role: %w",
 			err,
 		)
 	}
