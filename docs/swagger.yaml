@@ -17,6 +17,24 @@ definitions:
     - password
     - phone
     type: object
+  konsera-backend_internal_DTO_user.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  konsera-backend_internal_DTO_user.LoginResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/konsera-backend_internal_DTO_user.UserResponse'
+    type: object
   konsera-backend_internal_DTO_user.ResendOTPRequest:
     properties:
       profile_id:
@@ -56,6 +74,34 @@ definitions:
 info:
   contact: {}
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate a user with email and password, then return a JWT
+        access token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/konsera-backend_internal_DTO_user.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            $ref: '#/definitions/konsera-backend_internal_DTO_user.LoginResponse'
+        "400":
+          description: Invalid request or credentials
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Login user
+      tags:
+      - Auth
   /auth/register:
     post:
       consumes:
