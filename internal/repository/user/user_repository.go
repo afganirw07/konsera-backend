@@ -104,6 +104,170 @@ func (r *UserRepository) CreateUserProfileTx(
 	).Scan(&profile.ID)
 }
 
+func (r *UserRepository) GetUserByEmail(
+	ctx context.Context,
+	email string,
+) (*user.User, error) {
+	query := `
+		SELECT id, email, phone, password, auth_provider,
+		       provider_uid, status, email_verified_at,
+		       phone_verified_at, last_login_at, created_at,
+		       updated_at, deleted_at
+		FROM users
+		WHERE email = $1
+		  AND deleted_at IS NULL
+	`
+
+	u := &user.User{}
+
+	err := r.db.QueryRowContext(
+		ctx,
+		query,
+		email,
+	).Scan(
+		&u.ID,
+		&u.Email,
+		&u.Phone,
+		&u.Password,
+		&u.AuthProvider,
+		&u.ProviderUID,
+		&u.Status,
+		&u.EmailVerifiedAt,
+		&u.PhoneVerifiedAt,
+		&u.LastLoginAt,
+		&u.CreatedAt,
+		&u.UpdatedAt,
+		&u.DeletedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
+}
+
+func (r *UserRepository) GetUserRoles(
+	ctx context.Context,
+	userID uuid.UUID,
+) ([]string, error) {
+	query := `
+		SELECT r.name
+		FROM roles r
+		JOIN user_roles ur ON ur.role_id = r.id
+		WHERE ur.user_id = $1
+		ORDER BY r.name
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var roles []string
+
+	for rows.Next() {
+		var role string
+
+		if err := rows.Scan(&role); err != nil {
+			return nil, err
+		}
+
+		roles = append(roles, role)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return roles, nil
+}
+
+func (r *UserRepository) LoginUser(
+	ctx context.Context,
+	email string,
+) (*user.User, error) {
+	query := `
+		SELECT id, email, phone, password, auth_provider,
+		       provider_uid, status, email_verified_at,
+		       phone_verified_at, last_login_at, created_at,
+		       updated_at, deleted_at
+		FROM users
+		WHERE email = $1
+		  AND deleted_at IS NULL
+	`
+
+	user := &user.User{}
+
+	err := r.db.QueryRowContext(
+		ctx,
+		query,
+		email,
+	).Scan(
+		&user.ID,
+		&user.Email,
+		&user.Phone,
+		&user.Password,
+		&user.AuthProvider,
+		&user.ProviderUID,
+		&user.Status,
+		&user.EmailVerifiedAt,
+		&user.PhoneVerifiedAt,
+		&user.LastLoginAt,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+		&user.DeletedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (r *UserRepository) GetUserProfileByUserID(
+	ctx context.Context,
+	userID uuid.UUID,
+) (*user.UserProfile, error) {
+	query := `
+		SELECT id, user_id, full_name, avatar_url, date_of_birth,
+		       gender, address_line, city, province, postal_code,
+		       country, created_at, updated_at
+		FROM user_profiles
+		WHERE user_id = $1
+	`
+
+	profile := &user.UserProfile{}
+
+	err := r.db.QueryRowContext(
+		ctx,
+		query,
+		userID,
+	).Scan(
+		&profile.ID,
+		&profile.UserID,
+		&profile.FullName,
+		&profile.AvatarURL,
+		&profile.DateOfBirth,
+		&profile.Gender,
+		&profile.AddressLine,
+		&profile.City,
+		&profile.Province,
+		&profile.PostalCode,
+		&profile.Country,
+		&profile.CreatedAt,
+		&profile.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return profile, nil
+}
+
 func (r *UserRepository) CreateRoleTx(
 	ctx context.Context,
 	tx *sql.Tx,
@@ -324,7 +488,6 @@ func (r *UserRepository) UpdateUserStatus(
 	return err
 }
 
-
 func (r *UserRepository) CheckEmailExists(
 	ctx context.Context,
 	email string,
@@ -378,7 +541,6 @@ func (r *UserRepository) CheckPhoneExists(
 
 	return exists, nil
 }
-
 
 func (r *UserRepository) GetUserByProfileID(
 	ctx context.Context,
@@ -446,4 +608,26 @@ func (r *UserRepository) CheckUserActive(
 	}
 
 	return status == "active", nil
+}
+
+func (r *UserRepository) UpdateLastLoginAt(
+	ctx context.Context,
+	userID uuid.UUID,
+) error {
+	query := `
+		UPDATE users
+		SET last_login_at = $1,
+		    updated_at = $2
+		WHERE id = $3
+	`
+
+	_, err := r.db.ExecContext(
+		ctx,
+		query,
+		time.Now(),
+		time.Now(),
+		userID,
+	)
+
+	return err
 }

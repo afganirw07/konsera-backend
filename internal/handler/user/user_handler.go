@@ -2,13 +2,13 @@ package user
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	emailDTO "konsera-backend/internal/DTO/email"
 	dto "konsera-backend/internal/DTO/user"
 	helpers "konsera-backend/internal/helpers"
 	userService "konsera-backend/internal/services/user"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,6 +23,32 @@ func NewUserHandler(
 	return &UserHandler{
 		service: service,
 	}
+}
+
+// @Summary Login user
+// @Description Authenticate a user with email and password, then return a JWT access token
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param credentials body dto.LoginRequest true "Login credentials"
+// @Success 200 {object} dto.LoginResponse "Login successful"
+// @Failure 400 {object} map[string]interface{} "Invalid request or credentials"
+// @Router /auth/login [post]
+func (h *UserHandler) Login(c *gin.Context) {
+	var req dto.LoginRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helpers.Error(c, http.StatusBadRequest, "Invalid request", err.Error())
+		return
+	}
+
+	result, err := h.service.Login(c.Request.Context(), &req)
+	if err != nil {
+		helpers.Error(c, http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+
+	helpers.Success(c, http.StatusOK, "Login successful", result)
 }
 
 // @Summary Create a new user

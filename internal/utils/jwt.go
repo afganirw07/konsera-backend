@@ -8,14 +8,15 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-
 type JWTClaims struct {
 	UserID string   `json:"user_id"`
+	Name   string   `json:"name,omitempty"`
+	Email  string   `json:"email,omitempty"`
 	Roles  []string `json:"roles,omitempty"`
 	jwt.RegisteredClaims
 }
 
-func GenerateJWT(userID string, roles []string) (string, error) {
+func GenerateJWT(userID string, name string, email string, roles []string) (string, error) {
 	secretKey := os.Getenv("JWT_SECRET")
 	if secretKey == "" {
 		return "", fmt.Errorf("JWT_SECRET environment variable is not set")
@@ -23,9 +24,11 @@ func GenerateJWT(userID string, roles []string) (string, error) {
 
 	claims := JWTClaims{
 		UserID: userID,
+		Name:   name,
+		Email:  email,
 		Roles:  roles,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), 
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			Issuer:    "konsera-backend",
 		},
@@ -62,4 +65,4 @@ func ValidateJWT(tokenString string) (*JWTClaims, error) {
 	}
 
 	return nil, fmt.Errorf("invalid JWT token")
-}	
+}

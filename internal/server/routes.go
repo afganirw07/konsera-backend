@@ -75,6 +75,7 @@ func New() (*Server, error) {
 
 	authGroup := router.Group("/auth")
 	{
+		authGroup.POST("/login", userHandler.Login)
 		authGroup.POST("/register", userHandler.CreateUser)
 		authGroup.POST("/verify-otp", userHandler.VerifyOTP)
 		authGroup.POST("/verify-otp/:profile_id/:code", userHandler.VerifyOTPParams)

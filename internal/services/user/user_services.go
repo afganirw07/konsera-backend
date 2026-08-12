@@ -333,3 +333,62 @@ func (s *UserService) ResendOTP(
 
 	return nil
 }
+
+func (s *UserService) Login(
+	ctx context.Context,
+	req *dto.LoginRequest,
+) (*dto.LoginResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("[ERROR] Missing login request")
+	}
+
+	if req.Email == "" || req.Password == "" {
+		return nil, fmt.Errorf("[ERROR] Missing required fields")
+	}
+
+	user, err := s.repo.LoginUser(ctx, req.Email)
+	if err != nil {
+		return nil, fmt.Errorf("[ERROR] Invalid email or password")
+	}
+
+	if user.Password == nil || !utils.CheckPasswordHash(req.Password, *user.Password) {
+		return nil, fmt.Errorf("[ERROR] Invalid email or password")
+	}
+
+	if user.Status != "active" {
+		return nil, fmt.Errorf("[ERROR] Account is not active yet. Please verify your email first.")
+	}
+
+	profile, err := s.repo.GetUserProfileByUserID(ctx, user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("[ERROR] Failed to get user profile: %w", err)
+	}
+
+	roles, err := s.repo.GetUserRoles(ctx, user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("[ERROR] Failed to get user roles: %w", err)
+	}
+
+	token, err := utils.GenerateJWT(user.ID.String(), profile.FullName, user.Email, roles)
+	if err != nil {
+		return nil, fmt.Errorf("[ERROR] Failed to generate JWT: %w", err)
+	}
+
+	if err := s.repo.UpdateLastLoginAt(ctx, user.ID); err != nil {
+		return nil, fmt.Errorf("[ERROR] Failed to update last login time: %w", err)
+	}
+
+	return &dto.LoginResponse{
+		Token: token,
+		User: dto.UserResponse{
+			ID:            user.ID.String(),
+			ProfileID:     profile.ID.String(),
+			Name:          profile.FullName,
+			Email:         user.Email,
+			Phone:         user.Phone,
+			Auth_Provider: user.AuthProvider,
+			Provider_UID:  user.ProviderUID,
+			Status:        user.Status,
+		},
+	}, nil
+}
