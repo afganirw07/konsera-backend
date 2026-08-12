@@ -422,3 +422,28 @@ func (r *UserRepository) GetUserByProfileID(
 
 	return user, nil
 }
+
+func (r *UserRepository) CheckUserActive(
+	ctx context.Context,
+	userID string,
+) (bool, error) {
+	query := `
+		SELECT status
+		FROM users
+		WHERE id = $1
+	`
+
+	var status string
+
+	err := r.db.QueryRowContext(
+		ctx,
+		query,
+		userID,
+	).Scan(&status)
+
+	if err != nil {
+		return false, err
+	}
+
+	return status == "active", nil
+}

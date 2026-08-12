@@ -222,7 +222,6 @@ func (s *UserService) CreateUser(
 	}, nil
 }
 
-
 func (s *UserService) VerifyOTP(
 	ctx context.Context,
 	profileID string,
@@ -269,6 +268,18 @@ func (s *UserService) ResendOTP(
 ) error {
 	if profileID == "" {
 		return fmt.Errorf("[ERROR] Missing profile ID")
+	}
+
+	checkUser, err := s.repo.CheckUserActive(ctx, profileID)
+	if err != nil {
+		return fmt.Errorf(
+			"[ERROR] Failed to check user status: %w",
+			err,
+		)
+	}
+
+	if checkUser {
+		return fmt.Errorf("[ERROR] User is already active. No need to resend OTP.")
 	}
 
 	otpCode, err := utils.GenerateOTP(6)
