@@ -6,8 +6,10 @@ import (
 
 	emailDTO "konsera-backend/internal/DTO/email"
 	dto "konsera-backend/internal/DTO/user"
+	helpers "konsera-backend/internal/helpers"
 	userService "konsera-backend/internal/services/user"
 	"strconv"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -36,10 +38,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	var req dto.CreateUserRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Invalid request",
-			"error":   err.Error(),
-		})
+		helpers.Error(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
@@ -58,16 +57,11 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
-		})
+		helpers.Error(c, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "User created successfully. Verification email has been sent.",
-		"data":    user,
-	})
+	helpers.Success(c, http.StatusCreated, "User created successfully. Please check your email for OTP verification.", user)
 }
 
 // @Summary Verify OTP
@@ -83,10 +77,7 @@ func (h *UserHandler) VerifyOTP(c *gin.Context) {
 	var req dto.VerifyOTPRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Invalid request",
-			"error":   err.Error(),
-		})
+		helpers.Error(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
@@ -97,24 +88,17 @@ func (h *UserHandler) VerifyOTP(c *gin.Context) {
 	)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
-		})
+		helpers.Error(c, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
 	if !otp {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Invalid or expired OTP",
-		})
+		helpers.Error(c, http.StatusBadRequest, "Invalid or expired OTP", nil)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "OTP verified successfully. Your account is now active.",
-	})
+	helpers.Success(c, http.StatusOK, "OTP verified successfully. Your account is now active.", nil)
 }
-
 
 // @Summary Verify OTP via Path Parameters
 // @Description Verify the OTP code for user account activation using path parameters
@@ -131,17 +115,13 @@ func (h *UserHandler) VerifyOTPParams(c *gin.Context) {
 	codeStr := c.Param("code")
 
 	if profileID == "" || codeStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Missing profile_id or code in path parameters",
-		})
+		helpers.Error(c, http.StatusBadRequest, "Missing profile_id or code in path parameters", nil)
 		return
 	}
 
 	code, err := strconv.Atoi(codeStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Invalid code format. It should be an integer.",
-		})
+		helpers.Error(c, http.StatusBadRequest, "Invalid code format. It should be an integer.", nil)
 		return
 	}
 
@@ -152,24 +132,17 @@ func (h *UserHandler) VerifyOTPParams(c *gin.Context) {
 	)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
-		})
+		helpers.Error(c, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
 	if !otp {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Invalid or expired OTP",
-		})
+		helpers.Error(c, http.StatusBadRequest, "Invalid or expired OTP", nil)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "OTP verified successfully. Your account is now active.",
-	})
+	helpers.Success(c, http.StatusOK, "OTP verified successfully. Your account is now active.", nil)
 }
-
 
 // @Summary Resend OTP
 // @Description Resend the OTP code for user account activation
@@ -182,12 +155,9 @@ func (h *UserHandler) VerifyOTPParams(c *gin.Context) {
 // @Router /auth/resend-otp [post]
 func (h *UserHandler) ResendOTP(c *gin.Context) {
 	var req dto.ResendOTPRequest
-	
+
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Invalid request",
-			"error":   err.Error(),
-		})
+		helpers.Error(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
@@ -205,13 +175,9 @@ func (h *UserHandler) ResendOTP(c *gin.Context) {
 	)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
-		})
+		helpers.Error(c, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "OTP resent successfully. Please check your email.",
-	})
+	helpers.Success(c, http.StatusOK, "OTP resent successfully. Please check your email.", nil)
 }
