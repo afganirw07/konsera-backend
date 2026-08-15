@@ -1,4 +1,28 @@
 definitions:
+  konsera-backend_internal_DTO_user.CreateUserPreferenceRequest:
+    properties:
+      created_at:
+        type: string
+      favorite_genres:
+        items:
+          type: string
+        type: array
+      marketing_opt_in:
+        type: boolean
+      notify_email:
+        type: boolean
+      notify_push:
+        type: boolean
+      notify_sms:
+        type: boolean
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    required:
+    - favorite_genres
+    - user_id
+    type: object
   konsera-backend_internal_DTO_user.CreateUserRequest:
     properties:
       email:
@@ -41,6 +65,27 @@ definitions:
         type: string
     required:
     - profile_id
+    type: object
+  konsera-backend_internal_DTO_user.UserPreferenceResponse:
+    properties:
+      created_at:
+        type: string
+      favorite_genres:
+        items:
+          type: string
+        type: array
+      marketing_opt_in:
+        type: boolean
+      notify_email:
+        type: boolean
+      notify_push:
+        type: boolean
+      notify_sms:
+        type: boolean
+      updated_at:
+        type: string
+      user_id:
+        type: string
     type: object
   konsera-backend_internal_DTO_user.UserResponse:
     properties:
@@ -215,6 +260,33 @@ paths:
             additionalProperties: true
             type: object
       summary: Verify OTP via Path Parameters
+      tags:
+      - Users
+  /users/preferences:
+    post:
+      consumes:
+      - application/json
+      description: Create user preference for a specific user
+      parameters:
+      - description: User preference information
+        in: body
+        name: preference
+        required: true
+        schema:
+          $ref: '#/definitions/konsera-backend_internal_DTO_user.CreateUserPreferenceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User preference created successfully
+          schema:
+            $ref: '#/definitions/konsera-backend_internal_DTO_user.UserPreferenceResponse'
+        "400":
+          description: Invalid request or failed to create user preference
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create User Preference
       tags:
       - Users
 swagger: "2.0"

@@ -405,3 +405,43 @@ func (s *UserService) Login(
 		},
 	}, nil
 }
+
+func (s *UserService) CreateUserPreference(
+	ctx context.Context,
+	req *dto.CreateUserPreferenceRequest,
+) (*dto.UserPreferenceResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("[ERROR] Missing user preference request")
+	}
+
+	if req.UserID == "" {
+		return nil, fmt.Errorf("[ERROR] Missing required fields")
+	}
+
+	userPreference := &models.UserPreference{
+		UserID:         req.UserID,
+		FavoriteGenres: req.FavoriteGenres,
+		NotifyPush:     req.NotifyPush,
+		NotifyEmail:    req.NotifyEmail,
+		NotifySMS:      req.NotifySMS,
+		MarketingOptIn: req.MarketingOptIn,
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
+	}
+
+	userPref, err := s.repo.CreateUserPreference(ctx, userPreference)
+	if err != nil {
+		return nil, fmt.Errorf("[ERROR] Failed to create user preference: %w", err)
+	}
+
+	return &dto.UserPreferenceResponse{
+		UserID:         userPref.UserID,
+		FavoriteGenres: userPref.FavoriteGenres,
+		NotifyPush:     userPref.NotifyPush,
+		NotifyEmail:    userPref.NotifyEmail,
+		NotifySMS:      userPref.NotifySMS,
+		MarketingOptIn: userPref.MarketingOptIn,
+		CreatedAt:      userPref.CreatedAt,
+		UpdatedAt:      userPref.UpdatedAt,
+	}, nil
+}

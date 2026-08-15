@@ -215,3 +215,31 @@ func (h *UserHandler) ResendOTP(c *gin.Context) {
 
 	helpers.Success(c, http.StatusOK, "OTP resent successfully. Please check your email.", nil)
 }
+
+
+
+// @Summary Create User Preference
+// @Description Create user preference for a specific user
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param preference body dto.CreateUserPreferenceRequest true "User preference information"
+// @Success 201 {object} dto.UserPreferenceResponse "User preference created successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request or failed to create user preference"
+// @Router /users/preferences [post]
+func (h *UserHandler) CreateUserPreference(c *gin.Context) {
+	var req dto.CreateUserPreferenceRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helpers.Error(c, http.StatusBadRequest, "Invalid request", err.Error())
+		return
+	}
+
+	userPreference, err := h.service.CreateUserPreference(c.Request.Context(), &req)
+	if err != nil {
+		helpers.Error(c, http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+
+	helpers.Success(c, http.StatusCreated, "User preference created successfully", userPreference)
+}

@@ -216,9 +216,86 @@
                     }
                 }
             }
+        },
+        "/users/preferences": {
+            "post": {
+                "description": "Create user preference for a specific user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Create User Preference",
+                "parameters": [
+                    {
+                        "description": "User preference information",
+                        "name": "preference",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/konsera-backend_internal_DTO_user.CreateUserPreferenceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "User preference created successfully",
+                        "schema": {
+                            "$ref": "#/definitions/konsera-backend_internal_DTO_user.UserPreferenceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or failed to create user preference",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "konsera-backend_internal_DTO_user.CreateUserPreferenceRequest": {
+            "type": "object",
+            "required": [
+                "favorite_genres",
+                "user_id"
+            ],
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "favorite_genres": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "marketing_opt_in": {
+                    "type": "boolean"
+                },
+                "notify_email": {
+                    "type": "boolean"
+                },
+                "notify_push": {
+                    "type": "boolean"
+                },
+                "notify_sms": {
+                    "type": "boolean"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
         "konsera-backend_internal_DTO_user.CreateUserRequest": {
             "type": "object",
             "required": [
@@ -278,6 +355,38 @@
             ],
             "properties": {
                 "profile_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "konsera-backend_internal_DTO_user.UserPreferenceResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "favorite_genres": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "marketing_opt_in": {
+                    "type": "boolean"
+                },
+                "notify_email": {
+                    "type": "boolean"
+                },
+                "notify_push": {
+                    "type": "boolean"
+                },
+                "notify_sms": {
+                    "type": "boolean"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }

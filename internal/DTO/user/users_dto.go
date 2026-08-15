@@ -1,5 +1,7 @@
 package dto
 
+import "time"
+
 type CreateUserRequest struct {
 	FullName string `json:"full_name" binding:"required,min=2"`
 	Email    string `json:"email" binding:"required,email"`
@@ -35,4 +37,26 @@ type VerifyOTPRequest struct {
 
 type ResendOTPRequest struct {
 	ProfileID string `json:"profile_id" binding:"required"`
+}
+
+type CreateUserPreferenceRequest struct {
+	UserID         string   `json:"user_id" binding:"required"`
+	FavoriteGenres []string `json:"favorite_genres" binding:"required"`
+	NotifyPush     bool     `json:"notify_push"`
+	NotifyEmail    bool     `json:"notify_email"`
+	NotifySMS      bool      `json:"notify_sms"`
+	MarketingOptIn bool      `json:"marketing_opt_in"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
+
+type UserPreferenceResponse struct {
+	UserID         string   `json:"user_id"`
+	FavoriteGenres []string `json:"favorite_genres"`
+	NotifyPush     bool     `json:"notify_push"`
+	NotifyEmail    bool     `json:"notify_email"`
+	NotifySMS      bool     `json:"notify_sms"`
+	MarketingOptIn bool     `json:"marketing_opt_in"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
 }
