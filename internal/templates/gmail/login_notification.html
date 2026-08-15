@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Login to Your Account</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed; background-color: #f8f9fa; padding: 40px 10px;">
+    <tr>
+      <td align="center">
+        <!-- Card Container -->
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 520px; background-color: #ffffff; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+          
+          <!-- Main Content Area -->
+          <tr>
+            <td style="padding: 32px 32px 24px 32px;">
+              
+              <!-- Logo / App Name -->
+              <table border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+                <tr>
+                  <td style="vertical-align: middle;"></td>
+                  <td style="vertical-align: middle; font-size: 20px; font-weight: bold; color: #1a1a1a; letter-spacing: -0.3px;">
+                    Konsera
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Title & Subtitle -->
+              <h1 style="margin: 0 0 12px 0; font-size: 22px; font-weight: 600; color: #111111; letter-spacing: -0.5px;">New Sign-In Detected</h1>
+              <p style="margin: 0 0 24px 0; font-size: 13px; line-height: 1.5; color: #555555;">
+                Hello <p style="font-weight: 600;">{{.Name}}</p>, your Konsera account was recently accessed from a new device or location. Here are the details:
+              </p>
+
+              <!-- Device Info Box -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fafafa; border: 1px solid #f0f0f0; border-radius: 6px; margin-bottom: 24px; font-size: 11px;">
+                <tr>
+                  <td style="padding: 14px 16px 8px 16px; color: #888888; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">DEVICE</td>
+                  <td align="right" style="padding: 14px 16px 8px 16px; color: #111111; font-weight: 500;">{{.Device}}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 16px; color: #888888; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">LOCATION</td>
+                  <td align="right" style="padding: 8px 16px; color: #111111; font-weight: 500;">{{.Location}}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 16px; color: #888888; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">IP ADDRESS</td>
+                  <td align="right" style="padding: 8px 16px; color: #111111; font-weight: 500;">{{.IPAddress}}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 16px 14px 16px; color: #888888; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">TIME</td>
+                  <td align="right" style="padding: 8px 16px 14px 16px; color: #111111; font-weight: 500;">{{.Time}}</td>
+                </tr>
+              </table>
+
+              <!-- Security Callout Box -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fffaf5; border: 1px solid #ffeacc; border-radius: 6px; margin-bottom: 8px;">
+                <tr>
+                  <td style="padding: 14px 16px; font-size: 12px; color: #664d03; line-height: 1.5;">
+                    <span style="font-size: 14px; margin-right: 4px; vertical-align: middle;">⚠️</span>
+                    If this was you, no action is needed. If you don't recognize this activity, please Secure your account immediately by changing your password and reviewing your recent activity.
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Footer Area -->
+          <tr>
+            <td style="background-color: #fafafa; border-top: 1px solid #f0f0f0; padding: 24px 32px; text-align: center; font-size: 11px; color: #888888; line-height: 1.6;">
+              This is an automated security notification for <span style="color: #555555;">{{.Name}}</span>.<br>
+              <p style="color: #888888; text-decoration: underline; margin: 0 4px;">Manage Devices</p> &bull; 
+              <p  style="color: #888888; text-decoration: underline; margin: 0 4px;">Privacy</p> &bull; 
+              <p style="color: #888888; text-decoration: underline; margin: 0 4px;">Help Center</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

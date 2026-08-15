@@ -337,6 +337,7 @@ func (s *UserService) ResendOTP(
 func (s *UserService) Login(
 	ctx context.Context,
 	req *dto.LoginRequest,
+	emailMeta *emailDTO.LoginData,
 ) (*dto.LoginResponse, error) {
 	if req == nil {
 		return nil, fmt.Errorf("[ERROR] Missing login request")
@@ -376,6 +377,18 @@ func (s *UserService) Login(
 
 	if err := s.repo.UpdateLastLoginAt(ctx, user.ID); err != nil {
 		return nil, fmt.Errorf("[ERROR] Failed to update last login time: %w", err)
+	}
+
+	loginData := emailDTO.LoginData{
+		Name:      profile.FullName,
+		Device:    emailMeta.Device,
+		Location:  emailMeta.Location,
+		IPAddress: emailMeta.IPAddress,
+		Time:      time.Now().Format("2006-01-02 15:04:05"),
+	}
+
+	if err := s.emailService.SendLoginNotification(user.Email, loginData); err != nil {
+		return nil, fmt.Errorf("[ERROR] Failed to send login notification: %w", err)
 	}
 
 	return &dto.LoginResponse{

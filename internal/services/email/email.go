@@ -157,3 +157,23 @@ func (s *Service) SendRegisterOTP(to string, data dto.RegisterOTPEmailData) erro
 
 	return nil
 }
+
+
+func (s *Service) SendLoginNotification(to string, data dto.LoginData) error {
+	htmlBody, err := s.buildEmailFromTemplate("login_notification.html", data)
+	if err != nil {
+		return err
+	}
+
+	subject := "New Login Notification - Konsera"
+
+	if err := s.SendEmail(
+		to,
+		subject,
+		htmlBody,
+	); err != nil {
+		return err
+	}
+
+	return nil
+}

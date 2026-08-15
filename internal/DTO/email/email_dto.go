@@ -20,3 +20,11 @@ type RegisterOTPEmailMeta struct {
 	IPAddress string
 	Time      string
 }
+
+type LoginData struct {
+	Name             string
+	Device           string
+	Location         string
+	IPAddress        string
+	Time			 string
+}

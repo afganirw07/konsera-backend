@@ -42,7 +42,15 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	result, err := h.service.Login(c.Request.Context(), &req)
+	emailMeta := emailDTO.LoginData{
+		Name:      req.Email,
+		Device:    c.GetHeader("User-Agent"),
+		Location:  c.GetHeader("X-Forwarded-For"),
+		IPAddress: c.ClientIP(),
+		Time:      time.Now().Format("02 Jan 2006, 15:04:05"),
+	}
+
+	result, err := h.service.Login(c.Request.Context(), &req, &emailMeta)
 	if err != nil {
 		helpers.Error(c, http.StatusBadRequest, err.Error(), nil)
 		return
