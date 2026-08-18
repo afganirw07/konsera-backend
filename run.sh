@@ -223,13 +223,11 @@ main() {
     check_postgres
     db_status=$?
 
-    # Redis check
-    check_redis
-    redis_status=$?
+
 
     echo -e "${YELLOW}========================================${NC}"
 
-    if [ $db_status -eq 0 ] && [ $redis_status -eq 0 ]; then
+    if [ $db_status -eq 0 ]; then
         echo -e "${GREEN}✓ All systems are ready!${NC}"
         echo -e "${YELLOW}========================================${NC}"
         echo ""
