@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================================
-# SAKU / KONSERA BACKEND RUNNER
+# KONSERA BACKEND RUNNER
 # ============================================================
 
 set -o pipefail
@@ -14,7 +14,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 echo -e "${YELLOW}========================================${NC}"
-echo -e "${YELLOW}      SAKU Backend Runner${NC}"
+echo -e "${YELLOW}      Konsera Backend Runner${NC}"
 echo -e "${YELLOW}========================================${NC}"
 echo ""
 

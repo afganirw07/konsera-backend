@@ -3,11 +3,18 @@ package main
 import (
 	"log"
 
-	"github.com/joho/godotenv"
-	"konsera-backend/internal/server"
 	_ "konsera-backend/docs"
+	"konsera-backend/internal/server"
+
+	"github.com/joho/godotenv"
 )
 
+// @title Konsera API
+// @version 1.0
+// @description API for the Konsera ticketing platform
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("[ENV] .env file not found")

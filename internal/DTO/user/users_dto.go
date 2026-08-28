@@ -40,10 +40,10 @@ type ResendOTPRequest struct {
 }
 
 type CreateUserPreferenceRequest struct {
-	UserID         string   `json:"user_id" binding:"required"`
-	FavoriteGenres []string `json:"favorite_genres" binding:"required"`
-	NotifyPush     bool     `json:"notify_push"`
-	NotifyEmail    bool     `json:"notify_email"`
+	UserID         string    `json:"user_id" binding:"required"`
+	FavoriteGenres []string  `json:"favorite_genres" binding:"required"`
+	NotifyPush     bool      `json:"notify_push"`
+	NotifyEmail    bool      `json:"notify_email"`
 	NotifySMS      bool      `json:"notify_sms"`
 	MarketingOptIn bool      `json:"marketing_opt_in"`
 	CreatedAt      time.Time `json:"created_at"`
@@ -51,12 +51,12 @@ type CreateUserPreferenceRequest struct {
 }
 
 type UserPreferenceResponse struct {
-	UserID         string   `json:"user_id"`
-	FavoriteGenres []string `json:"favorite_genres"`
-	NotifyPush     bool     `json:"notify_push"`
-	NotifyEmail    bool     `json:"notify_email"`
-	NotifySMS      bool     `json:"notify_sms"`
-	MarketingOptIn bool     `json:"marketing_opt_in"`
+	UserID         string    `json:"user_id"`
+	FavoriteGenres []string  `json:"favorite_genres"`
+	NotifyPush     bool      `json:"notify_push"`
+	NotifyEmail    bool      `json:"notify_email"`
+	NotifySMS      bool      `json:"notify_sms"`
+	MarketingOptIn bool      `json:"marketing_opt_in"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }

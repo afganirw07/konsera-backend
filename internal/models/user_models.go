@@ -57,10 +57,10 @@ type Role struct {
 	CreatedAt   time.Time `json:"created_at"`
 }
 
-
 type UserRole struct {
-	ID        uuid.UUID `json:"id"`
-	UserID    uuid.UUID `json:"user_id"`
-	RoleID    uuid.UUID `json:"role_id"`
+	ID         uuid.UUID `json:"id"`
+	UserID     uuid.UUID `json:"user_id"`
+	RoleID     uuid.UUID `json:"role_id"`
 	AssignedAt time.Time `json:"assigned_at"`
 }
+

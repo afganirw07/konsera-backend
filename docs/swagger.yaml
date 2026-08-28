@@ -1,5 +1,5 @@
 definitions:
-  konsera-backend_internal_DTO_user.CreateUserPreferenceRequest:
+  dto.CreateUserPreferenceRequest:
     properties:
       created_at:
         type: string
@@ -23,7 +23,7 @@ definitions:
     - favorite_genres
     - user_id
     type: object
-  konsera-backend_internal_DTO_user.CreateUserRequest:
+  dto.CreateUserRequest:
     properties:
       email:
         type: string
@@ -41,7 +41,7 @@ definitions:
     - password
     - phone
     type: object
-  konsera-backend_internal_DTO_user.LoginRequest:
+  dto.LoginRequest:
     properties:
       email:
         type: string
@@ -52,21 +52,21 @@ definitions:
     - email
     - password
     type: object
-  konsera-backend_internal_DTO_user.LoginResponse:
+  dto.LoginResponse:
     properties:
       token:
         type: string
       user:
-        $ref: '#/definitions/konsera-backend_internal_DTO_user.UserResponse'
+        $ref: '#/definitions/dto.UserResponse'
     type: object
-  konsera-backend_internal_DTO_user.ResendOTPRequest:
+  dto.ResendOTPRequest:
     properties:
       profile_id:
         type: string
     required:
     - profile_id
     type: object
-  konsera-backend_internal_DTO_user.UserPreferenceResponse:
+  dto.UserPreferenceResponse:
     properties:
       created_at:
         type: string
@@ -87,7 +87,7 @@ definitions:
       user_id:
         type: string
     type: object
-  konsera-backend_internal_DTO_user.UserResponse:
+  dto.UserResponse:
     properties:
       auth_provider:
         type: string
@@ -106,7 +106,7 @@ definitions:
       status:
         type: string
     type: object
-  konsera-backend_internal_DTO_user.VerifyOTPRequest:
+  dto.VerifyOTPRequest:
     properties:
       code:
         type: integer
@@ -116,9 +116,686 @@ definitions:
     - code
     - profile_id
     type: object
+  event.CreateArtistRequest:
+    properties:
+      bio:
+        type: string
+      name:
+        maxLength: 150
+        type: string
+      photo_url:
+        type: string
+    required:
+    - name
+    type: object
+  event.CreateCategoryRequest:
+    properties:
+      icon_url:
+        type: string
+      name:
+        maxLength: 100
+        type: string
+      slug:
+        maxLength: 120
+        type: string
+    required:
+    - name
+    - slug
+    type: object
+  event.CreateEventRequest:
+    properties:
+      banner_url:
+        type: string
+      category_ids:
+        items:
+          type: string
+        type: array
+      description:
+        type: string
+      organizer_id:
+        type: string
+      poster_url:
+        type: string
+      refund_policy:
+        type: string
+      slug:
+        maxLength: 280
+        type: string
+      terms_and_conditions:
+        type: string
+      title:
+        maxLength: 250
+        type: string
+      venue_id:
+        type: string
+    required:
+    - organizer_id
+    - slug
+    - title
+    - venue_id
+    type: object
+  event.CreateSessionRequest:
+    properties:
+      end_at:
+        type: string
+      gate_close_at:
+        type: string
+      gate_open_at:
+        type: string
+      session_name:
+        type: string
+      start_at:
+        type: string
+      status:
+        type: string
+    required:
+    - end_at
+    - gate_close_at
+    - gate_open_at
+    - start_at
+    type: object
+  event.UpdateCategoryRequest:
+    properties:
+      icon_url:
+        type: string
+      name:
+        maxLength: 100
+        type: string
+      slug:
+        maxLength: 120
+        type: string
+    type: object
+  event.UpdateEventRequest:
+    properties:
+      banner_url:
+        type: string
+      category_ids:
+        items:
+          type: string
+        type: array
+      description:
+        type: string
+      is_featured:
+        type: boolean
+      organizer_id:
+        type: string
+      poster_url:
+        type: string
+      refund_policy:
+        type: string
+      rejection_reason:
+        type: string
+      slug:
+        maxLength: 280
+        type: string
+      status:
+        type: string
+      terms_and_conditions:
+        type: string
+      title:
+        maxLength: 250
+        type: string
+      venue_id:
+        type: string
+    type: object
+  helpers.APIResponse:
+    properties:
+      data: {}
+      error: {}
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+  models.Artist:
+    properties:
+      bio:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      photo_url:
+        type: string
+    type: object
+  models.Event:
+    properties:
+      approved_at:
+        type: string
+      approved_by:
+        type: string
+      banner_url:
+        type: string
+      category_ids:
+        items:
+          type: string
+        type: array
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_featured:
+        type: boolean
+      max_price:
+        type: number
+      min_price:
+        type: number
+      organizer_id:
+        type: string
+      poster_url:
+        type: string
+      refund_policy:
+        type: string
+      rejection_reason:
+        type: string
+      slug:
+        type: string
+      status:
+        type: string
+      terms_and_conditions:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+      venue_id:
+        type: string
+    type: object
+  models.EventCategory:
+    properties:
+      icon_url:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      slug:
+        type: string
+    type: object
+  models.EventSession:
+    properties:
+      created_at:
+        type: string
+      end_at:
+        type: string
+      event_id:
+        type: string
+      gate_close_at:
+        type: string
+      gate_open_at:
+        type: string
+      id:
+        type: string
+      session_name:
+        type: string
+      start_at:
+        type: string
+      status:
+        type: string
+    type: object
+  models.Organizer:
+    properties:
+      bank_account_name:
+        type: string
+      bank_account_number:
+        type: string
+      bank_name:
+        type: string
+      commission_rate_override:
+        type: number
+      company_name:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: string
+      legal_entity_type:
+        type: string
+      tax_id:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+      verification_status:
+        type: string
+    type: object
+  models.OrganizerVerification:
+    properties:
+      created_at:
+        type: string
+      document_type:
+        type: string
+      document_url:
+        type: string
+      id:
+        type: string
+      organizer_id:
+        type: string
+      rejection_reason:
+        type: string
+      reviewed_at:
+        type: string
+      reviewed_by:
+        type: string
+      status:
+        type: string
+    type: object
+  models.Seat:
+    properties:
+      coord_x:
+        type: number
+      coord_y:
+        type: number
+      created_at:
+        type: string
+      id:
+        type: string
+      row_label:
+        type: string
+      seat_number:
+        type: string
+      venue_section_id:
+        type: string
+    type: object
+  models.TicketInventory:
+    properties:
+      event_session_id:
+        type: string
+      held_count:
+        type: integer
+      id:
+        type: string
+      sold_count:
+        type: integer
+      ticket_tier_id:
+        type: string
+      total_quota:
+        type: integer
+      updated_at:
+        type: string
+      version:
+        type: integer
+    type: object
+  models.TicketTier:
+    properties:
+      created_at:
+        type: string
+      event_id:
+        type: string
+      id:
+        type: string
+      is_seated:
+        type: boolean
+      max_per_transaction:
+        type: integer
+      name:
+        type: string
+      price:
+        type: number
+      sale_end_at:
+        type: string
+      sale_start_at:
+        type: string
+      tier_type:
+        type: string
+      updated_at:
+        type: string
+      venue_section_id:
+        type: string
+    type: object
+  models.Venue:
+    properties:
+      address:
+        type: string
+      city:
+        type: string
+      country:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: string
+      latitude:
+        type: number
+      longitude:
+        type: number
+      name:
+        type: string
+      province:
+        type: string
+      total_capacity:
+        type: integer
+      type:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.VenueSection:
+    properties:
+      capacity:
+        type: integer
+      created_at:
+        type: string
+      id:
+        type: string
+      is_seated:
+        type: boolean
+      name:
+        type: string
+      venue_id:
+        type: string
+    type: object
+  organizer.CreateOrganizerRequest:
+    properties:
+      bank_account_name:
+        type: string
+      bank_account_number:
+        type: string
+      bank_name:
+        type: string
+      commission_rate_override:
+        maximum: 100
+        minimum: 0
+        type: number
+      company_name:
+        maxLength: 200
+        type: string
+      legal_entity_type:
+        type: string
+      tax_id:
+        type: string
+      user_id:
+        type: string
+    required:
+    - company_name
+    - user_id
+    type: object
+  organizer.CreateOrganizerVerificationRequest:
+    properties:
+      document_type:
+        maxLength: 50
+        type: string
+      document_url:
+        type: string
+    required:
+    - document_type
+    - document_url
+    type: object
+  organizer.UpdateOrganizerRequest:
+    properties:
+      bank_account_name:
+        type: string
+      bank_account_number:
+        type: string
+      bank_name:
+        type: string
+      commission_rate_override:
+        maximum: 100
+        minimum: 0
+        type: number
+      company_name:
+        maxLength: 200
+        type: string
+      legal_entity_type:
+        type: string
+      tax_id:
+        type: string
+      verification_status:
+        enum:
+        - pending
+        - in_review
+        - approved
+        - rejected
+        type: string
+    type: object
+  organizer.UpdateOrganizerVerificationRequest:
+    properties:
+      document_type:
+        maxLength: 50
+        type: string
+      document_url:
+        type: string
+      rejection_reason:
+        type: string
+      reviewed_at:
+        type: string
+      reviewed_by:
+        type: string
+      status:
+        enum:
+        - pending
+        - in_review
+        - approved
+        - rejected
+        type: string
+    type: object
+  ticket.CreateInventoryRequest:
+    properties:
+      event_session_id:
+        type: string
+      total_quota:
+        minimum: 0
+        type: integer
+    required:
+    - event_session_id
+    type: object
+  ticket.CreateTicketTierRequest:
+    properties:
+      is_seated:
+        type: boolean
+      max_per_transaction:
+        type: integer
+      name:
+        maxLength: 100
+        type: string
+      price:
+        minimum: 0
+        type: number
+      sale_end_at:
+        type: string
+      sale_start_at:
+        type: string
+      tier_type:
+        enum:
+        - early_bird
+        - regular
+        - vip
+        - vvip
+        - group_package
+        type: string
+      venue_section_id:
+        type: string
+    required:
+    - name
+    - tier_type
+    type: object
+  ticket.UpdateTicketTierRequest:
+    properties:
+      is_seated:
+        type: boolean
+      max_per_transaction:
+        type: integer
+      name:
+        maxLength: 100
+        type: string
+      price:
+        minimum: 0
+        type: number
+      sale_end_at:
+        type: string
+      sale_start_at:
+        type: string
+      tier_type:
+        enum:
+        - early_bird
+        - regular
+        - vip
+        - vvip
+        - group_package
+        type: string
+      venue_section_id:
+        type: string
+    type: object
+  venue.CreateSeatRequest:
+    properties:
+      coord_x:
+        type: number
+      coord_y:
+        type: number
+      row_label:
+        maxLength: 10
+        type: string
+      seat_number:
+        maxLength: 10
+        type: string
+    required:
+    - row_label
+    - seat_number
+    type: object
+  venue.CreateVenueRequest:
+    properties:
+      address:
+        type: string
+      city:
+        maxLength: 100
+        type: string
+      country:
+        type: string
+      latitude:
+        maximum: 90
+        minimum: -90
+        type: number
+      longitude:
+        maximum: 180
+        minimum: -180
+        type: number
+      name:
+        maxLength: 200
+        type: string
+      province:
+        type: string
+      total_capacity:
+        type: integer
+      type:
+        enum:
+        - indoor
+        - outdoor
+        - hybrid
+        type: string
+    required:
+    - address
+    - city
+    - name
+    - total_capacity
+    - type
+    type: object
+  venue.CreateVenueSectionRequest:
+    properties:
+      capacity:
+        type: integer
+      is_seated:
+        type: boolean
+      name:
+        maxLength: 100
+        type: string
+    required:
+    - capacity
+    - name
+    type: object
+  venue.UpdateSeatRequest:
+    properties:
+      coord_x:
+        type: number
+      coord_y:
+        type: number
+      row_label:
+        maxLength: 10
+        type: string
+      seat_number:
+        maxLength: 10
+        type: string
+    type: object
+  venue.UpdateVenueRequest:
+    properties:
+      address:
+        type: string
+      city:
+        maxLength: 100
+        type: string
+      country:
+        type: string
+      latitude:
+        maximum: 90
+        minimum: -90
+        type: number
+      longitude:
+        maximum: 180
+        minimum: -180
+        type: number
+      name:
+        maxLength: 200
+        type: string
+      province:
+        type: string
+      total_capacity:
+        type: integer
+      type:
+        enum:
+        - indoor
+        - outdoor
+        - hybrid
+        type: string
+    type: object
+  venue.UpdateVenueSectionRequest:
+    properties:
+      capacity:
+        type: integer
+      is_seated:
+        type: boolean
+      name:
+        maxLength: 100
+        type: string
+    type: object
 info:
   contact: {}
+  description: API for the Konsera ticketing platform
+  title: Konsera API
+  version: "1.0"
 paths:
+  /artists:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Artist
+        in: body
+        name: artist
+        required: true
+        schema:
+          $ref: '#/definitions/event.CreateArtistRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Artist'
+      security:
+      - BearerAuth: []
+      summary: Create artist
+      tags:
+      - Artists
   /auth/login:
     post:
       consumes:
@@ -131,14 +808,14 @@ paths:
         name: credentials
         required: true
         schema:
-          $ref: '#/definitions/konsera-backend_internal_DTO_user.LoginRequest'
+          $ref: '#/definitions/dto.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Login successful
           schema:
-            $ref: '#/definitions/konsera-backend_internal_DTO_user.LoginResponse'
+            $ref: '#/definitions/dto.LoginResponse'
         "400":
           description: Invalid request or credentials
           schema:
@@ -158,14 +835,14 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/konsera-backend_internal_DTO_user.CreateUserRequest'
+          $ref: '#/definitions/dto.CreateUserRequest'
       produces:
       - application/json
       responses:
         "201":
           description: User created successfully
           schema:
-            $ref: '#/definitions/konsera-backend_internal_DTO_user.UserResponse'
+            $ref: '#/definitions/dto.UserResponse'
         "400":
           description: Invalid request or email/phone already exists
           schema:
@@ -185,7 +862,7 @@ paths:
         name: otp
         required: true
         schema:
-          $ref: '#/definitions/konsera-backend_internal_DTO_user.ResendOTPRequest'
+          $ref: '#/definitions/dto.ResendOTPRequest'
       produces:
       - application/json
       responses:
@@ -202,6 +879,33 @@ paths:
       summary: Resend OTP
       tags:
       - Users
+  /auth/users/preferences:
+    post:
+      consumes:
+      - application/json
+      description: Create user preference for a specific user
+      parameters:
+      - description: User preference information
+        in: body
+        name: preference
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateUserPreferenceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User preference created successfully
+          schema:
+            $ref: '#/definitions/dto.UserPreferenceResponse'
+        "400":
+          description: Invalid request or failed to create user preference
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create User Preference
+      tags:
+      - Users
   /auth/verify-otp:
     post:
       consumes:
@@ -213,7 +917,7 @@ paths:
         name: otp
         required: true
         schema:
-          $ref: '#/definitions/konsera-backend_internal_DTO_user.VerifyOTPRequest'
+          $ref: '#/definitions/dto.VerifyOTPRequest'
       produces:
       - application/json
       responses:
@@ -262,31 +966,1144 @@ paths:
       summary: Verify OTP via Path Parameters
       tags:
       - Users
-  /users/preferences:
+  /event-categories:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.EventCategory'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: List categories
+      tags:
+      - Event Categories
     post:
       consumes:
       - application/json
-      description: Create user preference for a specific user
       parameters:
-      - description: User preference information
+      - description: Category
         in: body
-        name: preference
+        name: category
         required: true
         schema:
-          $ref: '#/definitions/konsera-backend_internal_DTO_user.CreateUserPreferenceRequest'
+          $ref: '#/definitions/event.CreateCategoryRequest'
       produces:
       - application/json
       responses:
         "201":
-          description: User preference created successfully
+          description: Created
           schema:
-            $ref: '#/definitions/konsera-backend_internal_DTO_user.UserPreferenceResponse'
-        "400":
-          description: Invalid request or failed to create user preference
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Create User Preference
+            $ref: '#/definitions/models.EventCategory'
+      security:
+      - BearerAuth: []
+      summary: Create category
       tags:
-      - Users
+      - Event Categories
+  /event-categories/{category_id}:
+    delete:
+      parameters:
+      - description: Category ID
+        in: path
+        name: category_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete category
+      tags:
+      - Event Categories
+    get:
+      parameters:
+      - description: Category ID
+        in: path
+        name: category_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.EventCategory'
+      security:
+      - BearerAuth: []
+      summary: Get category
+      tags:
+      - Event Categories
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Category ID
+        in: path
+        name: category_id
+        required: true
+        type: string
+      - description: Category changes
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/event.UpdateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.EventCategory'
+      security:
+      - BearerAuth: []
+      summary: Update category
+      tags:
+      - Event Categories
+  /events:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Event'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: List events
+      tags:
+      - Events
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Event
+        in: body
+        name: event
+        required: true
+        schema:
+          $ref: '#/definitions/event.CreateEventRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Event'
+      security:
+      - BearerAuth: []
+      summary: Create event
+      tags:
+      - Events
+  /events/{event_id}:
+    delete:
+      parameters:
+      - description: Event ID
+        in: path
+        name: event_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete event
+      tags:
+      - Events
+    get:
+      parameters:
+      - description: Event ID
+        in: path
+        name: event_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Event'
+      security:
+      - BearerAuth: []
+      summary: Get event
+      tags:
+      - Events
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Event ID
+        in: path
+        name: event_id
+        required: true
+        type: string
+      - description: Event changes
+        in: body
+        name: event
+        required: true
+        schema:
+          $ref: '#/definitions/event.UpdateEventRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Event'
+      security:
+      - BearerAuth: []
+      summary: Update event
+      tags:
+      - Events
+  /events/{event_id}/sessions:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Event ID
+        in: path
+        name: event_id
+        required: true
+        type: string
+      - description: Session
+        in: body
+        name: session
+        required: true
+        schema:
+          $ref: '#/definitions/event.CreateSessionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.EventSession'
+      security:
+      - BearerAuth: []
+      summary: Create event session
+      tags:
+      - Event Sessions
+  /events/{event_id}/ticket-tiers:
+    get:
+      parameters:
+      - description: Event ID
+        in: path
+        name: event_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.TicketTier'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: List ticket tiers
+      tags:
+      - Ticket Tiers
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Event ID
+        in: path
+        name: event_id
+        required: true
+        type: string
+      - description: Ticket tier
+        in: body
+        name: tier
+        required: true
+        schema:
+          $ref: '#/definitions/ticket.CreateTicketTierRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.TicketTier'
+      security:
+      - BearerAuth: []
+      summary: Create ticket tier
+      tags:
+      - Ticket Tiers
+  /events/{event_id}/ticket-tiers/{tier_id}:
+    delete:
+      parameters:
+      - description: Event ID
+        in: path
+        name: event_id
+        required: true
+        type: string
+      - description: Ticket tier ID
+        in: path
+        name: tier_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete ticket tier
+      tags:
+      - Ticket Tiers
+    get:
+      parameters:
+      - description: Event ID
+        in: path
+        name: event_id
+        required: true
+        type: string
+      - description: Ticket tier ID
+        in: path
+        name: tier_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TicketTier'
+      security:
+      - BearerAuth: []
+      summary: Get ticket tier
+      tags:
+      - Ticket Tiers
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Event ID
+        in: path
+        name: event_id
+        required: true
+        type: string
+      - description: Ticket tier ID
+        in: path
+        name: tier_id
+        required: true
+        type: string
+      - description: Ticket tier changes
+        in: body
+        name: tier
+        required: true
+        schema:
+          $ref: '#/definitions/ticket.UpdateTicketTierRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TicketTier'
+      security:
+      - BearerAuth: []
+      summary: Update ticket tier
+      tags:
+      - Ticket Tiers
+  /organizers:
+    get:
+      description: Get all active organizers
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Organizer'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: List organizers
+      tags:
+      - Organizers
+    post:
+      consumes:
+      - application/json
+      description: Create an organizer profile for a user
+      parameters:
+      - description: Organizer data
+        in: body
+        name: organizer
+        required: true
+        schema:
+          $ref: '#/definitions/organizer.CreateOrganizerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Organizer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Create organizer
+      tags:
+      - Organizers
+  /organizers/{organizer_id}:
+    delete:
+      parameters:
+      - description: Organizer ID
+        in: path
+        name: organizer_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete organizer
+      tags:
+      - Organizers
+    get:
+      parameters:
+      - description: Organizer ID
+        in: path
+        name: organizer_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Organizer'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get organizer
+      tags:
+      - Organizers
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Organizer ID
+        in: path
+        name: organizer_id
+        required: true
+        type: string
+      - description: Organizer changes
+        in: body
+        name: organizer
+        required: true
+        schema:
+          $ref: '#/definitions/organizer.UpdateOrganizerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Organizer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update organizer
+      tags:
+      - Organizers
+  /organizers/{organizer_id}/verifications:
+    get:
+      parameters:
+      - description: Organizer ID
+        in: path
+        name: organizer_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.OrganizerVerification'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: List organizer verifications
+      tags:
+      - Organizer Verifications
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Organizer ID
+        in: path
+        name: organizer_id
+        required: true
+        type: string
+      - description: Verification document
+        in: body
+        name: verification
+        required: true
+        schema:
+          $ref: '#/definitions/organizer.CreateOrganizerVerificationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.OrganizerVerification'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Submit organizer verification
+      tags:
+      - Organizer Verifications
+  /organizers/{organizer_id}/verifications/{verification_id}:
+    delete:
+      parameters:
+      - description: Organizer ID
+        in: path
+        name: organizer_id
+        required: true
+        type: string
+      - description: Verification ID
+        in: path
+        name: verification_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete organizer verification
+      tags:
+      - Organizer Verifications
+    get:
+      parameters:
+      - description: Organizer ID
+        in: path
+        name: organizer_id
+        required: true
+        type: string
+      - description: Verification ID
+        in: path
+        name: verification_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.OrganizerVerification'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get organizer verification
+      tags:
+      - Organizer Verifications
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Organizer ID
+        in: path
+        name: organizer_id
+        required: true
+        type: string
+      - description: Verification ID
+        in: path
+        name: verification_id
+        required: true
+        type: string
+      - description: Verification changes
+        in: body
+        name: verification
+        required: true
+        schema:
+          $ref: '#/definitions/organizer.UpdateOrganizerVerificationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.OrganizerVerification'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update organizer verification
+      tags:
+      - Organizer Verifications
+  /ticket-tiers/{tier_id}/inventory:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Ticket tier ID
+        in: path
+        name: tier_id
+        required: true
+        type: string
+      - description: Inventory
+        in: body
+        name: inventory
+        required: true
+        schema:
+          $ref: '#/definitions/ticket.CreateInventoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.TicketInventory'
+      security:
+      - BearerAuth: []
+      summary: Create inventory
+      tags:
+      - Ticket Inventories
+  /venues:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Venue'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: List venues
+      tags:
+      - Venues
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Venue data
+        in: body
+        name: venue
+        required: true
+        schema:
+          $ref: '#/definitions/venue.CreateVenueRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Venue'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Create venue
+      tags:
+      - Venues
+  /venues/{venue_id}:
+    delete:
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venue_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete venue
+      tags:
+      - Venues
+    get:
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venue_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Venue'
+      security:
+      - BearerAuth: []
+      summary: Get venue
+      tags:
+      - Venues
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venue_id
+        required: true
+        type: string
+      - description: Venue changes
+        in: body
+        name: venue
+        required: true
+        schema:
+          $ref: '#/definitions/venue.UpdateVenueRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Venue'
+      security:
+      - BearerAuth: []
+      summary: Update venue
+      tags:
+      - Venues
+  /venues/{venue_id}/sections:
+    get:
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venue_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.VenueSection'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: List venue sections
+      tags:
+      - Venue Sections
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venue_id
+        required: true
+        type: string
+      - description: Section data
+        in: body
+        name: section
+        required: true
+        schema:
+          $ref: '#/definitions/venue.CreateVenueSectionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.VenueSection'
+      security:
+      - BearerAuth: []
+      summary: Create venue section
+      tags:
+      - Venue Sections
+  /venues/{venue_id}/sections/{section_id}:
+    delete:
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venue_id
+        required: true
+        type: string
+      - description: Section ID
+        in: path
+        name: section_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete venue section
+      tags:
+      - Venue Sections
+    get:
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venue_id
+        required: true
+        type: string
+      - description: Section ID
+        in: path
+        name: section_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.VenueSection'
+      security:
+      - BearerAuth: []
+      summary: Get venue section
+      tags:
+      - Venue Sections
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venue_id
+        required: true
+        type: string
+      - description: Section ID
+        in: path
+        name: section_id
+        required: true
+        type: string
+      - description: Section changes
+        in: body
+        name: section
+        required: true
+        schema:
+          $ref: '#/definitions/venue.UpdateVenueSectionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.VenueSection'
+      security:
+      - BearerAuth: []
+      summary: Update venue section
+      tags:
+      - Venue Sections
+  /venues/{venue_id}/sections/{section_id}/seats:
+    get:
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venue_id
+        required: true
+        type: string
+      - description: Section ID
+        in: path
+        name: section_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Seat'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: List seats
+      tags:
+      - Seats
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venue_id
+        required: true
+        type: string
+      - description: Section ID
+        in: path
+        name: section_id
+        required: true
+        type: string
+      - description: Seat data
+        in: body
+        name: seat
+        required: true
+        schema:
+          $ref: '#/definitions/venue.CreateSeatRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Seat'
+      security:
+      - BearerAuth: []
+      summary: Create seat
+      tags:
+      - Seats
+  /venues/{venue_id}/sections/{section_id}/seats/{seat_id}:
+    delete:
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venue_id
+        required: true
+        type: string
+      - description: Section ID
+        in: path
+        name: section_id
+        required: true
+        type: string
+      - description: Seat ID
+        in: path
+        name: seat_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete seat
+      tags:
+      - Seats
+    get:
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venue_id
+        required: true
+        type: string
+      - description: Section ID
+        in: path
+        name: section_id
+        required: true
+        type: string
+      - description: Seat ID
+        in: path
+        name: seat_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Seat'
+      security:
+      - BearerAuth: []
+      summary: Get seat
+      tags:
+      - Seats
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Venue ID
+        in: path
+        name: venue_id
+        required: true
+        type: string
+      - description: Section ID
+        in: path
+        name: section_id
+        required: true
+        type: string
+      - description: Seat ID
+        in: path
+        name: seat_id
+        required: true
+        type: string
+      - description: Seat changes
+        in: body
+        name: seat
+        required: true
+        schema:
+          $ref: '#/definitions/venue.UpdateSeatRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Seat'
+      security:
+      - BearerAuth: []
+      summary: Update seat
+      tags:
+      - Seats
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
