@@ -339,6 +339,45 @@ definitions:
       status:
         type: string
     type: object
+  models.Notification:
+    properties:
+      body:
+        type: string
+      channel:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      metadata:
+        additionalProperties: true
+        type: object
+      read_at:
+        type: string
+      status:
+        type: string
+      template_id:
+        type: string
+      title:
+        type: string
+      user_id:
+        type: string
+    type: object
+  models.NotificationTemplate:
+    properties:
+      body_template:
+        type: string
+      channel:
+        type: string
+      code:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      subject:
+        type: string
+    type: object
   models.Organizer:
     properties:
       bank_account_name:
@@ -387,6 +426,50 @@ definitions:
       reviewed_by:
         type: string
       status:
+        type: string
+    type: object
+  models.PromoCode:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      discount_type:
+        type: string
+      discount_value:
+        type: number
+      event_id:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      max_discount_amount:
+        type: number
+      per_user_limit:
+        type: integer
+      usage_count:
+        type: integer
+      usage_limit:
+        type: integer
+      valid_from:
+        type: string
+      valid_until:
+        type: string
+    type: object
+  models.PromoCodeUsage:
+    properties:
+      booking_id:
+        type: string
+      discount_applied:
+        type: number
+      id:
+        type: string
+      promo_code_id:
+        type: string
+      used_at:
+        type: string
+      user_id:
         type: string
     type: object
   models.Seat:
@@ -496,6 +579,40 @@ definitions:
       venue_id:
         type: string
     type: object
+  notification.CreateNotificationRequest:
+    type: object
+  notification.CreateNotificationTemplateRequest:
+    properties:
+      body_template:
+        type: string
+      channel:
+        type: string
+      code:
+        maxLength: 80
+        type: string
+      subject:
+        maxLength: 200
+        type: string
+    required:
+    - body_template
+    - channel
+    - code
+    type: object
+  notification.UpdateNotificationRequest:
+    type: object
+  notification.UpdateNotificationTemplateRequest:
+    properties:
+      body_template:
+        type: string
+      channel:
+        type: string
+      code:
+        maxLength: 80
+        type: string
+      subject:
+        maxLength: 200
+        type: string
+    type: object
   organizer.CreateOrganizerRequest:
     properties:
       bank_account_name:
@@ -578,6 +695,75 @@ definitions:
         - in_review
         - approved
         - rejected
+        type: string
+    type: object
+  promo.ApplyPromoRequest:
+    properties:
+      code:
+        maxLength: 50
+        type: string
+    required:
+    - code
+    type: object
+  promo.CreatePromoCodeRequest:
+    properties:
+      code:
+        maxLength: 50
+        type: string
+      discount_type:
+        enum:
+        - percentage
+        - fixed_amount
+        type: string
+      discount_value:
+        minimum: 0
+        type: number
+      event_id:
+        type: string
+      max_discount_amount:
+        minimum: 0
+        type: number
+      per_user_limit:
+        type: integer
+      usage_limit:
+        type: integer
+      valid_from:
+        type: string
+      valid_until:
+        type: string
+    required:
+    - code
+    - discount_type
+    - valid_from
+    - valid_until
+    type: object
+  promo.UpdatePromoCodeRequest:
+    properties:
+      code:
+        maxLength: 50
+        type: string
+      discount_type:
+        enum:
+        - percentage
+        - fixed_amount
+        type: string
+      discount_value:
+        minimum: 0
+        type: number
+      event_id:
+        type: string
+      is_active:
+        type: boolean
+      max_discount_amount:
+        minimum: 0
+        type: number
+      per_user_limit:
+        type: integer
+      usage_limit:
+        type: integer
+      valid_from:
+        type: string
+      valid_until:
         type: string
     type: object
   ticket.CreateInventoryRequest:
@@ -966,6 +1152,34 @@ paths:
       summary: Verify OTP via Path Parameters
       tags:
       - Users
+  /checkout/bookings/{booking_id}/promo:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Booking ID
+        in: path
+        name: booking_id
+        required: true
+        type: string
+      - description: Promo code
+        in: body
+        name: promo
+        required: true
+        schema:
+          $ref: '#/definitions/promo.ApplyPromoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PromoCodeUsage'
+      security:
+      - BearerAuth: []
+      summary: Apply promo code
+      tags:
+      - Promo Codes
   /event-categories:
     get:
       produces:
@@ -1332,6 +1546,214 @@ paths:
       summary: Update ticket tier
       tags:
       - Ticket Tiers
+  /notification-templates:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.NotificationTemplate'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: List notification templates
+      tags:
+      - Notification Templates
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Template
+        in: body
+        name: template
+        required: true
+        schema:
+          $ref: '#/definitions/notification.CreateNotificationTemplateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.NotificationTemplate'
+      security:
+      - BearerAuth: []
+      summary: Create notification template
+      tags:
+      - Notification Templates
+  /notification-templates/{template_id}:
+    delete:
+      parameters:
+      - description: Template ID
+        in: path
+        name: template_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete notification template
+      tags:
+      - Notification Templates
+    get:
+      parameters:
+      - description: Template ID
+        in: path
+        name: template_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.NotificationTemplate'
+      security:
+      - BearerAuth: []
+      summary: Get notification template
+      tags:
+      - Notification Templates
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Template ID
+        in: path
+        name: template_id
+        required: true
+        type: string
+      - description: Template changes
+        in: body
+        name: template
+        required: true
+        schema:
+          $ref: '#/definitions/notification.UpdateNotificationTemplateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.NotificationTemplate'
+      security:
+      - BearerAuth: []
+      summary: Update notification template
+      tags:
+      - Notification Templates
+  /notifications:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Notification'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: List user notifications
+      tags:
+      - Notifications
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Notification
+        in: body
+        name: notification
+        required: true
+        schema:
+          $ref: '#/definitions/notification.CreateNotificationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Notification'
+      security:
+      - BearerAuth: []
+      summary: Create notification
+      tags:
+      - Notifications
+  /notifications/{notification_id}:
+    delete:
+      parameters:
+      - description: Notification ID
+        in: path
+        name: notification_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete notification
+      tags:
+      - Notifications
+    get:
+      parameters:
+      - description: Notification ID
+        in: path
+        name: notification_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Notification'
+      security:
+      - BearerAuth: []
+      summary: Get user notification
+      tags:
+      - Notifications
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Notification ID
+        in: path
+        name: notification_id
+        required: true
+        type: string
+      - description: Notification changes
+        in: body
+        name: notification
+        required: true
+        schema:
+          $ref: '#/definitions/notification.UpdateNotificationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Notification'
+      security:
+      - BearerAuth: []
+      summary: Update notification
+      tags:
+      - Notifications
   /organizers:
     get:
       description: Get all active organizers
@@ -1680,6 +2102,110 @@ paths:
       summary: Update organizer verification
       tags:
       - Organizer Verifications
+  /promo-codes:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.PromoCode'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: List promo codes
+      tags:
+      - Promo Codes
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Promo code
+        in: body
+        name: promo
+        required: true
+        schema:
+          $ref: '#/definitions/promo.CreatePromoCodeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.PromoCode'
+      security:
+      - BearerAuth: []
+      summary: Create promo code
+      tags:
+      - Promo Codes
+  /promo-codes/{promo_id}:
+    delete:
+      parameters:
+      - description: Promo ID
+        in: path
+        name: promo_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete promo code
+      tags:
+      - Promo Codes
+    get:
+      parameters:
+      - description: Promo ID
+        in: path
+        name: promo_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PromoCode'
+      security:
+      - BearerAuth: []
+      summary: Get promo code
+      tags:
+      - Promo Codes
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Promo ID
+        in: path
+        name: promo_id
+        required: true
+        type: string
+      - description: Promo changes
+        in: body
+        name: promo
+        required: true
+        schema:
+          $ref: '#/definitions/promo.UpdatePromoCodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PromoCode'
+      security:
+      - BearerAuth: []
+      summary: Update promo code
+      tags:
+      - Promo Codes
   /ticket-tiers/{tier_id}/inventory:
     post:
       consumes:

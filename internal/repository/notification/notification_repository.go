@@ -3,6 +3,7 @@ package notification
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 
 	dto "konsera-backend/internal/DTO/notification"
 	"konsera-backend/internal/models"
@@ -75,7 +76,11 @@ const notificationColumns = `id,user_id,template_id,channel,title,body,status,me
 
 func scanNotification(s interface{ Scan(...any) error }) (*models.Notification, error) {
 	x := &models.Notification{}
-	err := s.Scan(&x.ID, &x.UserID, &x.TemplateID, &x.Channel, &x.Title, &x.Body, &x.Status, &x.Metadata, &x.ReadAt, &x.CreatedAt)
+	var rawMetadata []byte
+	err := s.Scan(&x.ID, &x.UserID, &x.TemplateID, &x.Channel, &x.Title, &x.Body, &x.Status, &rawMetadata, &x.ReadAt, &x.CreatedAt)
+	if err == nil && len(rawMetadata) > 0 {
+		err = json.Unmarshal(rawMetadata, &x.Metadata)
+	}
 	return x, err
 }
 
@@ -101,7 +106,11 @@ func (r *Repository) Get(ctx context.Context, userID, id uuid.UUID) (*models.Not
 }
 
 func (r *Repository) Create(ctx context.Context, item *models.Notification) error {
-	created, err := scanNotification(r.db.QueryRowContext(ctx, `INSERT INTO notifications(user_id,template_id,channel,title,body,status,metadata) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING `+notificationColumns, item.UserID, item.TemplateID, item.Channel, item.Title, item.Body, item.Status, item.Metadata))
+	metadata, err := json.Marshal(item.Metadata)
+	if err != nil {
+		return err
+	}
+	created, err := scanNotification(r.db.QueryRowContext(ctx, `INSERT INTO notifications(user_id,template_id,channel,title,body,status,metadata) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING `+notificationColumns, item.UserID, item.TemplateID, item.Channel, item.Title, item.Body, item.Status, metadata))
 	if err != nil {
 		return err
 	}

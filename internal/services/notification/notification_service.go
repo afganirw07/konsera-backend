@@ -2,6 +2,7 @@ package notification
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -85,7 +86,13 @@ func (s *Service) Create(ctx context.Context, q *dto.CreateNotificationRequest) 
 		}
 		templateID = &id
 	}
-	item := &models.Notification{UserID: userID, TemplateID: templateID, Channel: q.Channel, Title: q.Title, Body: q.Body, Status: q.Status, Metadata: q.Metadata}
+	metadata := map[string]interface{}{}
+	if len(q.Metadata) > 0 {
+		if err := json.Unmarshal(q.Metadata, &metadata); err != nil {
+			return nil, fmt.Errorf("invalid metadata: %w", err)
+		}
+	}
+	item := &models.Notification{UserID: userID, TemplateID: templateID, Channel: q.Channel, Title: q.Title, Body: q.Body, Status: q.Status, Metadata: metadata}
 	err = s.repo.Create(ctx, item)
 	return item, err
 }
