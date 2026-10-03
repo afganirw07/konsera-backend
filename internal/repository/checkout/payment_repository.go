@@ -68,8 +68,15 @@ func (r *Repository) Payments(ctx context.Context, user uuid.UUID, id *uuid.UUID
 	}
 	return out, rows.Err()
 }
-func (r *Repository) CreatePayment(ctx context.Context, x *models.Payment) error {
-	return r.db.QueryRowContext(ctx, `INSERT INTO payments(booking_id,payment_method_id,amount,expires_at) VALUES($1,$2,$3,$4) RETURNING id,booking_id,payment_method_id,provider_transaction_id,amount,status,expires_at,paid_at,created_at,updated_at`, x.BookingID, x.PaymentMethodID, x.Amount, x.ExpiresAt).Scan(&x.ID, &x.BookingID, &x.PaymentMethodID, &x.ProviderTransactionID, &x.Amount, &x.Status, &x.ExpiresAt, &x.PaidAt, &x.CreatedAt, &x.UpdatedAt)
+func (r *Repository) CreatePayment(ctx context.Context, user uuid.UUID, x *models.Payment) error {
+	return r.db.QueryRowContext(ctx, `
+		INSERT INTO payments(booking_id,payment_method_id,amount,expires_at)
+		SELECT b.id, $2, b.total_amount, $3
+		FROM bookings b
+		JOIN payment_methods pm ON pm.id=$2 AND pm.is_active=TRUE
+		WHERE b.id=$1 AND b.user_id=$4 AND b.status IN ('pending','awaiting_payment')
+		RETURNING id,booking_id,payment_method_id,provider_transaction_id,amount,status,expires_at,paid_at,created_at,updated_at
+	`, x.BookingID, x.PaymentMethodID, x.ExpiresAt, user).Scan(&x.ID, &x.BookingID, &x.PaymentMethodID, &x.ProviderTransactionID, &x.Amount, &x.Status, &x.ExpiresAt, &x.PaidAt, &x.CreatedAt, &x.UpdatedAt)
 }
 func (r *Repository) UpdatePayment(ctx context.Context, user, id uuid.UUID, q *checkout.UpdatePaymentRequest) (*models.Payment, error) {
 	return scanPayment(r.db.QueryRowContext(ctx, `UPDATE payments p SET status=COALESCE($3,status),provider_transaction_id=COALESCE($4,provider_transaction_id),paid_at=COALESCE($5,paid_at),updated_at=NOW() FROM bookings b WHERE p.booking_id=b.id AND b.user_id=$1 AND p.id=$2 RETURNING p.id,p.booking_id,p.payment_method_id,p.provider_transaction_id,p.amount,p.status,p.expires_at,p.paid_at,p.created_at,p.updated_at`, user, id, q.Status, q.ProviderTransactionID, q.PaidAt))

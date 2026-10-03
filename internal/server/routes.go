@@ -112,7 +112,12 @@ func New() (*Server, error) {
 	// ROUTER
 
 	router := gin.Default()
+	if err := router.SetTrustedProxies(nil); err != nil {
+		return nil, err
+	}
+	router.Use(appMiddleware.SecurityHeaders())
 	loginRateLimiter := appMiddleware.NewRateLimiter(5, time.Minute)
+	authRateLimiter := appMiddleware.NewRateLimiter(20, time.Minute)
 	organizerRateLimiter := appMiddleware.NewRateLimiter(60, time.Minute)
 
 	router.GET("/ping", func(c *gin.Context) {
@@ -129,10 +134,10 @@ func New() (*Server, error) {
 	authGroup := router.Group("/auth")
 	{
 		authGroup.POST("/login", loginRateLimiter.Middleware(), userHandler.Login)
-		authGroup.POST("/register", userHandler.CreateUser)
-		authGroup.POST("/verify-otp", userHandler.VerifyOTP)
-		authGroup.POST("/verify-otp/:profile_id/:code", userHandler.VerifyOTPParams)
-		authGroup.POST("/resend-otp", userHandler.ResendOTP)
+		authGroup.POST("/register", authRateLimiter.Middleware(), userHandler.CreateUser)
+		authGroup.POST("/verify-otp", authRateLimiter.Middleware(), userHandler.VerifyOTP)
+		authGroup.POST("/verify-otp/:profile_id/:code", authRateLimiter.Middleware(), userHandler.VerifyOTPParams)
+		authGroup.POST("/resend-otp", authRateLimiter.Middleware(), userHandler.ResendOTP)
 		authGroup.POST("/users/preferences", appMiddleware.Auth(), userHandler.CreateUserPreference)
 	}
 

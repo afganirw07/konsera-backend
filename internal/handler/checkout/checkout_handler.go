@@ -174,7 +174,7 @@ func (h *Handler) CreatePayment(c *gin.Context) {
 	if !bind(c, &q) {
 		return
 	}
-	x, e := h.s.CreatePayment(c, &q)
+	x, e := h.s.CreatePayment(c, userID(c), &q)
 	if e != nil {
 		fail(c, e)
 		return

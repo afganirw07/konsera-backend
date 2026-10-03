@@ -28,7 +28,7 @@ func GenerateJWT(userID string, name string, email string, roles []string) (stri
 		Email:  email,
 		Roles:  roles,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			Issuer:    "konsera-backend",
 		},

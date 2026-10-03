@@ -36,8 +36,20 @@ func (r *RateLimiter) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		now := time.Now()
 		key := c.ClientIP()
+		if userID, exists := c.Get(UserIDKey); exists {
+			if value, ok := userID.(string); ok && value != "" {
+				key = "user:" + value
+			}
+		}
 
 		r.mu.Lock()
+		if len(r.clients) > 10000 {
+			for clientKey, value := range r.clients {
+				if now.Sub(value.windowStart) >= r.window {
+					delete(r.clients, clientKey)
+				}
+			}
+		}
 		client, exists := r.clients[key]
 		if !exists || now.Sub(client.windowStart) >= r.window {
 			client = rateLimitClient{windowStart: now}

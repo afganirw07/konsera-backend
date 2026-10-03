@@ -18,7 +18,13 @@ func scanRefund(s interface{ Scan(...any) error }) (*models.Refund, error) {
 const refundCols = `id,booking_id,payment_id,amount,reason,status,requested_by,processed_by,processed_at,created_at`
 
 func (r *Repository) CreateRefund(ctx context.Context, x *models.Refund) error {
-	y, e := scanRefund(r.db.QueryRowContext(ctx, `INSERT INTO refunds(booking_id,payment_id,amount,reason,requested_by) VALUES($1,$2,$3,$4,$5) RETURNING `+refundCols, x.BookingID, x.PaymentID, x.Amount, x.Reason, x.RequestedBy))
+	y, e := scanRefund(r.db.QueryRowContext(ctx, `
+		INSERT INTO refunds(booking_id,payment_id,amount,reason,requested_by)
+		SELECT b.id,p.id,$3,$4,$5
+		FROM bookings b
+		JOIN payments p ON p.id=$2 AND p.booking_id=b.id AND p.status='success'
+		WHERE b.id=$1 AND b.user_id=$5 AND $3 <= p.amount
+		RETURNING `+refundCols, x.BookingID, x.PaymentID, x.Amount, x.Reason, x.RequestedBy))
 	if e != nil {
 		return e
 	}

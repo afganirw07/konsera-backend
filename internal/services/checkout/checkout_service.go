@@ -183,7 +183,11 @@ func (s *Service) Payments(c context.Context, u, v string) ([]*models.Payment, e
 	}
 	return s.repo.Payments(c, a, b)
 }
-func (s *Service) CreatePayment(c context.Context, q *dto.CreatePaymentRequest) (*models.Payment, error) {
+func (s *Service) CreatePayment(c context.Context, u string, q *dto.CreatePaymentRequest) (*models.Payment, error) {
+	user, e := uid(u, "user_id")
+	if e != nil {
+		return nil, e
+	}
 	b, e := uid(q.BookingID, "booking_id")
 	if e != nil {
 		return nil, e
@@ -192,8 +196,8 @@ func (s *Service) CreatePayment(c context.Context, q *dto.CreatePaymentRequest) 
 	if e != nil {
 		return nil, e
 	}
-	x := &models.Payment{BookingID: b, PaymentMethodID: m, Amount: q.Amount, ExpiresAt: q.ExpiresAt}
-	e = s.repo.CreatePayment(c, x)
+	x := &models.Payment{BookingID: b, PaymentMethodID: m, ExpiresAt: q.ExpiresAt}
+	e = s.repo.CreatePayment(c, user, x)
 	return x, e
 }
 func (s *Service) UpdatePayment(c context.Context, u, v string, q *dto.UpdatePaymentRequest) (*models.Payment, error) {

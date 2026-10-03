@@ -83,7 +83,7 @@ func (r *Repository) Apply(ctx context.Context, user, booking uuid.UUID, code st
 	}
 	var eventID uuid.UUID
 	var subtotal float64
-	if e = tx.QueryRowContext(ctx, `SELECT event_id,subtotal_amount FROM bookings WHERE id=$1 AND user_id=$2`, booking, user).Scan(&eventID, &subtotal); e != nil {
+	if e = tx.QueryRowContext(ctx, `SELECT event_id,subtotal_amount FROM bookings WHERE id=$1 AND user_id=$2 AND status='awaiting_payment' AND (hold_expires_at IS NULL OR hold_expires_at>NOW())`, booking, user).Scan(&eventID, &subtotal); e != nil {
 		return nil, e
 	}
 	if p.EventID != nil && *p.EventID != eventID {
