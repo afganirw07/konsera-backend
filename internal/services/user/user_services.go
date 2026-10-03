@@ -132,11 +132,17 @@ func (s *UserService) CreateUser(
 		)
 	}
 
-	customerRole, _ := s.repo.GetRoleByNameTx(
+	customerRole, err := s.repo.GetRoleByNameTx(
 		ctx,
 		tx,
 		"customer",
 	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"[ERROR] Failed to get customer role: %w",
+			err,
+		)
+	}
 
 	newUserRole := &models.UserRole{
 		UserID:     newUser.ID,
@@ -235,7 +241,12 @@ func (s *UserService) VerifyOTP(
 		return false, fmt.Errorf("[ERROR] Missing OTP code")
 	}
 
-	isValid, err := s.repo.VerifyOTP(ctx, profileID, code)
+	verifiedUser, err := s.repo.GetUserByProfileID(ctx, profileID)
+	if err != nil {
+		return false, fmt.Errorf("[ERROR] Failed to find user for OTP: %w", err)
+	}
+
+	isValid, err := s.repo.VerifyOTP(ctx, verifiedUser.ID.String(), code)
 	if err != nil {
 		return false, fmt.Errorf(
 			"[ERROR] Failed to verify OTP: %w",
@@ -249,7 +260,7 @@ func (s *UserService) VerifyOTP(
 
 	if err := s.repo.UpdateUserStatus(
 		ctx,
-		profileID,
+		verifiedUser.ID.String(),
 		"active",
 	); err != nil {
 		return false, fmt.Errorf(
@@ -270,15 +281,15 @@ func (s *UserService) ResendOTP(
 		return fmt.Errorf("[ERROR] Missing profile ID")
 	}
 
-	checkUser, err := s.repo.CheckUserActive(ctx, profileID)
+	user, err := s.repo.GetUserByProfileID(ctx, profileID)
 	if err != nil {
 		return fmt.Errorf(
-			"[ERROR] Failed to check user status: %w",
+			"[ERROR] Failed to find user for OTP: %w",
 			err,
 		)
 	}
 
-	if checkUser {
+	if user.Status == "active" {
 		return fmt.Errorf("[ERROR] User is already active. No need to resend OTP.")
 	}
 
@@ -290,17 +301,9 @@ func (s *UserService) ResendOTP(
 		)
 	}
 
-	if err := s.repo.ResendOTP(ctx, profileID, otpCode); err != nil {
+	if err := s.repo.ResendOTP(ctx, user.ID.String(), otpCode); err != nil {
 		return fmt.Errorf(
 			"[ERROR] Failed to resend OTP: %w",
-			err,
-		)
-	}
-
-	user, err := s.repo.GetUserByProfileID(ctx, profileID)
-	if err != nil {
-		return fmt.Errorf(
-			"[ERROR] Failed to get user by profile ID: %w",
 			err,
 		)
 	}

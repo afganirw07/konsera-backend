@@ -133,7 +133,7 @@ func New() (*Server, error) {
 		authGroup.POST("/verify-otp", userHandler.VerifyOTP)
 		authGroup.POST("/verify-otp/:profile_id/:code", userHandler.VerifyOTPParams)
 		authGroup.POST("/resend-otp", userHandler.ResendOTP)
-		authGroup.POST("/users/preferences ", userHandler.CreateUserPreference)
+		authGroup.POST("/users/preferences", appMiddleware.Auth(), userHandler.CreateUserPreference)
 	}
 
 	organizerGroup := router.Group("/organizers")

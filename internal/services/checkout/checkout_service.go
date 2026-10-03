@@ -52,6 +52,9 @@ func (s *Service) CreateCart(c context.Context, u string, q *dto.CreateCartReque
 	if e != nil {
 		return nil, e
 	}
+	if q.Quantity > 6 {
+		return nil, fmt.Errorf("quantity cannot exceed 6 tickets")
+	}
 	seat := (*uuid.UUID)(nil)
 	if q.SeatID != nil {
 		x, e := uid(*q.SeatID, "seat_id")
@@ -98,12 +101,7 @@ func (s *Service) Checkout(c context.Context, u string, q *dto.CreateBookingRequ
 	if e != nil {
 		return nil, e
 	}
-	var expiry *string
-	if q.HoldExpiresAt != nil {
-		x := q.HoldExpiresAt.Format(time.RFC3339)
-		expiry = &x
-	}
-	return s.repo.Checkout(c, user, event, expiry)
+	return s.repo.Checkout(c, user, event)
 }
 func (s *Service) Bookings(c context.Context, u string) ([]*models.Booking, error) {
 	id, e := uid(u, "user_id")

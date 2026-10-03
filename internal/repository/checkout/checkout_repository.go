@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"konsera-backend/internal/models"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -37,38 +38,101 @@ func (r *Repository) Carts(ctx context.Context, user uuid.UUID) ([]*models.Cart,
 	return out, rows.Err()
 }
 func (r *Repository) CreateCart(ctx context.Context, x *models.Cart) error {
-	created, e := scanCart(r.db.QueryRowContext(ctx, `INSERT INTO carts(user_id,ticket_tier_id,event_session_id,seat_id,quantity,held_until) VALUES($1,$2,$3,$4,$5,$6) RETURNING id,user_id,ticket_tier_id,event_session_id,seat_id,quantity,held_until,created_at`, x.UserID, x.TicketTierID, x.EventSessionID, x.SeatID, x.Quantity, x.HeldUntil))
+	tx, e := r.db.BeginTx(ctx, nil)
+	if e != nil {
+		return e
+	}
+	defer tx.Rollback()
+
+	var total, sold, held int
+	e = tx.QueryRowContext(ctx, `SELECT total_quota,sold_count,held_count FROM ticket_inventories WHERE ticket_tier_id=$1 AND event_session_id=$2 FOR UPDATE`, x.TicketTierID, x.EventSessionID).Scan(&total, &sold, &held)
+	if e != nil {
+		return e
+	}
+	if total-sold-held < x.Quantity {
+		return fmt.Errorf("ticket inventory is not available")
+	}
+	if _, e = tx.ExecContext(ctx, `UPDATE ticket_inventories SET held_count=held_count+$3,version=version+1,updated_at=NOW() WHERE ticket_tier_id=$1 AND event_session_id=$2`, x.TicketTierID, x.EventSessionID, x.Quantity); e != nil {
+		return e
+	}
+	created, e := scanCart(tx.QueryRowContext(ctx, `INSERT INTO carts(user_id,ticket_tier_id,event_session_id,seat_id,quantity,held_until) VALUES($1,$2,$3,$4,$5,$6) RETURNING id,user_id,ticket_tier_id,event_session_id,seat_id,quantity,held_until,created_at`, x.UserID, x.TicketTierID, x.EventSessionID, x.SeatID, x.Quantity, x.HeldUntil))
 	if e != nil {
 		return e
 	}
 	*x = *created
-	return nil
+	return tx.Commit()
 }
 func (r *Repository) UpdateCart(ctx context.Context, user, id uuid.UUID, qty int) (*models.Cart, error) {
-	return scanCart(r.db.QueryRowContext(ctx, `UPDATE carts SET quantity=$3 WHERE user_id=$1 AND id=$2 AND held_until>NOW() RETURNING id,user_id,ticket_tier_id,event_session_id,seat_id,quantity,held_until,created_at`, user, id, qty))
-}
-func (r *Repository) DeleteCart(ctx context.Context, user, id uuid.UUID) error {
-	res, e := r.db.ExecContext(ctx, `DELETE FROM carts WHERE user_id=$1 AND id=$2`, user, id)
-	if e != nil {
-		return e
-	}
-	n, _ := res.RowsAffected()
-	if n == 0 {
-		return sql.ErrNoRows
-	}
-	return nil
-}
-func (r *Repository) Checkout(ctx context.Context, user, event uuid.UUID, expiry *string) (*models.Booking, error) {
 	tx, e := r.db.BeginTx(ctx, nil)
 	if e != nil {
 		return nil, e
 	}
 	defer tx.Rollback()
-	var hold interface{}
-	if expiry != nil {
-		hold = *expiry
+	var old *models.Cart
+	old, e = scanCart(tx.QueryRowContext(ctx, `SELECT id,user_id,ticket_tier_id,event_session_id,seat_id,quantity,held_until,created_at FROM carts WHERE user_id=$1 AND id=$2 AND held_until>NOW() FOR UPDATE`, user, id))
+	if e != nil {
+		return nil, e
 	}
-	row := tx.QueryRowContext(ctx, `INSERT INTO bookings(booking_code,user_id,event_id,status,hold_expires_at) VALUES(upper(substr(md5(random()::text),1,12)),$1,$2,'awaiting_payment',NULLIF($3,'')::timestamptz) RETURNING id,booking_code,user_id,event_id,status,subtotal_amount,discount_amount,platform_fee_amount,total_amount,promo_code_id,hold_expires_at,paid_at,cancelled_at,created_at,updated_at`, user, event, hold)
+	delta := qty - old.Quantity
+	if delta > 0 {
+		var total, sold, held int
+		if e = tx.QueryRowContext(ctx, `SELECT total_quota,sold_count,held_count FROM ticket_inventories WHERE ticket_tier_id=$1 AND event_session_id=$2 FOR UPDATE`, old.TicketTierID, old.EventSessionID).Scan(&total, &sold, &held); e != nil {
+			return nil, e
+		}
+		if total-sold-held < delta {
+			return nil, fmt.Errorf("ticket inventory is not available")
+		}
+	}
+	if _, e = tx.ExecContext(ctx, `UPDATE carts SET quantity=$3 WHERE user_id=$1 AND id=$2`, user, id, qty); e != nil {
+		return nil, e
+	}
+	if _, e = tx.ExecContext(ctx, `UPDATE ticket_inventories SET held_count=held_count+$3,version=version+1,updated_at=NOW() WHERE ticket_tier_id=$1 AND event_session_id=$2`, old.TicketTierID, old.EventSessionID, delta); e != nil {
+		return nil, e
+	}
+	updated, e := scanCart(tx.QueryRowContext(ctx, `SELECT id,user_id,ticket_tier_id,event_session_id,seat_id,quantity,held_until,created_at FROM carts WHERE id=$1`, id))
+	if e != nil {
+		return nil, e
+	}
+	if e = tx.Commit(); e != nil {
+		return nil, e
+	}
+	return updated, nil
+}
+func (r *Repository) DeleteCart(ctx context.Context, user, id uuid.UUID) error {
+	tx, e := r.db.BeginTx(ctx, nil)
+	if e != nil {
+		return e
+	}
+	defer tx.Rollback()
+	var tier, session uuid.UUID
+	var quantity int
+	if e = tx.QueryRowContext(ctx, `SELECT ticket_tier_id,event_session_id,quantity FROM carts WHERE user_id=$1 AND id=$2 FOR UPDATE`, user, id).Scan(&tier, &session, &quantity); e != nil {
+		return e
+	}
+	if _, e = tx.ExecContext(ctx, `DELETE FROM carts WHERE user_id=$1 AND id=$2`, user, id); e != nil {
+		return e
+	}
+	if _, e = tx.ExecContext(ctx, `UPDATE ticket_inventories SET held_count=GREATEST(held_count-$3,0),version=version+1,updated_at=NOW() WHERE ticket_tier_id=$1 AND event_session_id=$2`, tier, session, quantity); e != nil {
+		return e
+	}
+	return tx.Commit()
+}
+func (r *Repository) Checkout(ctx context.Context, user, event uuid.UUID) (*models.Booking, error) {
+	tx, e := r.db.BeginTx(ctx, nil)
+	if e != nil {
+		return nil, e
+	}
+	defer tx.Rollback()
+	var hold time.Time
+	if e = tx.QueryRowContext(ctx, `
+		SELECT MIN(c.held_until)
+		FROM carts c
+		JOIN ticket_tiers tt ON tt.id = c.ticket_tier_id
+		WHERE c.user_id = $1 AND c.held_until > NOW() AND tt.event_id = $2
+	`, user, event).Scan(&hold); e != nil {
+		return nil, e
+	}
+	row := tx.QueryRowContext(ctx, `INSERT INTO bookings(booking_code,user_id,event_id,status,hold_expires_at) VALUES(upper(substr(md5(random()::text),1,12)),$1,$2,'awaiting_payment',$3) RETURNING id,booking_code,user_id,event_id,status,subtotal_amount,discount_amount,platform_fee_amount,total_amount,promo_code_id,hold_expires_at,paid_at,cancelled_at,created_at,updated_at`, user, event, hold)
 	x, e := scanBooking(row)
 	if e != nil {
 		return nil, e

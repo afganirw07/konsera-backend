@@ -8,6 +8,7 @@ import (
 	emailDTO "konsera-backend/internal/DTO/email"
 	dto "konsera-backend/internal/DTO/user"
 	helpers "konsera-backend/internal/helpers"
+	appMiddleware "konsera-backend/internal/middleware"
 	userService "konsera-backend/internal/services/user"
 
 	"github.com/gin-gonic/gin"
@@ -230,6 +231,17 @@ func (h *UserHandler) CreateUserPreference(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helpers.Error(c, http.StatusBadRequest, "Invalid request", err.Error())
+		return
+	}
+
+	userID, ok := c.Get(appMiddleware.UserIDKey)
+	if !ok {
+		helpers.Error(c, http.StatusUnauthorized, "Authentication is required", nil)
+		return
+	}
+	req.UserID, ok = userID.(string)
+	if !ok || req.UserID == "" {
+		helpers.Error(c, http.StatusUnauthorized, "Authentication is required", nil)
 		return
 	}
 

@@ -49,7 +49,12 @@ func scanTransfer(s interface{ Scan(...any) error }) (*models.TicketTransfer, er
 const transferCols = `id,ticket_id,from_user_id,to_user_id,status,requested_at,resolved_at`
 
 func (r *TicketRepository) CreateTransfer(ctx context.Context, x *models.TicketTransfer) error {
-	created, err := scanTransfer(r.db.QueryRowContext(ctx, `INSERT INTO ticket_transfers(ticket_id,from_user_id,to_user_id) VALUES($1,$2,$3) RETURNING `+transferCols, x.TicketID, x.FromUserID, x.ToUserID))
+	created, err := scanTransfer(r.db.QueryRowContext(ctx, `
+		INSERT INTO ticket_transfers(ticket_id,from_user_id,to_user_id)
+		SELECT id,owner_user_id,$2
+		FROM tickets
+		WHERE id=$1 AND owner_user_id=$3 AND status IN ('issued','transferred')
+		RETURNING `+transferCols, x.TicketID, x.ToUserID, x.FromUserID))
 	if err != nil {
 		return err
 	}
@@ -113,12 +118,51 @@ func scanCheckIn(s interface{ Scan(...any) error }) (*models.CheckIn, error) {
 const checkInCols = `id,ticket_id,event_session_id,scanned_by,result,device_id,scanned_at,is_offline_sync`
 
 func (r *TicketRepository) CreateCheckIn(ctx context.Context, x *models.CheckIn) error {
-	created, err := scanCheckIn(r.db.QueryRowContext(ctx, `INSERT INTO check_ins(ticket_id,event_session_id,scanned_by,result,device_id,scanned_at,is_offline_sync) VALUES($1,$2,$3,$4,$5,COALESCE($6,NOW()),$7) RETURNING `+checkInCols, x.TicketID, x.EventSessionID, x.ScannedBy, x.Result, x.DeviceID, x.ScannedAt, x.IsOfflineSync))
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var status string
+	var ticketSession uuid.UUID
+	err = tx.QueryRowContext(ctx, `
+		SELECT t.status, bi.event_session_id
+		FROM tickets t
+		JOIN booking_items bi ON bi.id=t.booking_item_id
+		WHERE t.id=$1
+		FOR UPDATE
+	`, x.TicketID).Scan(&status, &ticketSession)
+	if err != nil {
+		return err
+	}
+
+	var gateOpen, gateClose time.Time
+	err = tx.QueryRowContext(ctx, `SELECT gate_open_at,gate_close_at FROM event_sessions WHERE id=$1`, x.EventSessionID).Scan(&gateOpen, &gateClose)
+	if err != nil {
+		return err
+	}
+
+	result := "success"
+	now := time.Now()
+	if ticketSession != x.EventSessionID {
+		result = "invalid"
+	} else if status == "checked_in" {
+		result = "duplicate"
+	} else if (status != "issued" && status != "transferred") || now.Before(gateOpen) {
+		result = "not_yet_open"
+	} else if now.After(gateClose) {
+		result = "closed"
+	} else if _, err = tx.ExecContext(ctx, `UPDATE tickets SET status='checked_in' WHERE id=$1 AND status='issued'`, x.TicketID); err != nil {
+		return err
+	}
+
+	created, err := scanCheckIn(tx.QueryRowContext(ctx, `INSERT INTO check_ins(ticket_id,event_session_id,scanned_by,result,device_id,scanned_at,is_offline_sync) VALUES($1,$2,$3,$4,$5,COALESCE($6,NOW()),$7) RETURNING `+checkInCols, x.TicketID, x.EventSessionID, x.ScannedBy, result, x.DeviceID, x.ScannedAt, x.IsOfflineSync))
 	if err != nil {
 		return err
 	}
 	*x = *created
-	return nil
+	return tx.Commit()
 }
 func (r *TicketRepository) CheckIns(ctx context.Context, ticketID *uuid.UUID) ([]*models.CheckIn, error) {
 	rows, e := r.db.QueryContext(ctx, `SELECT `+checkInCols+` FROM check_ins WHERE ($1::uuid IS NULL OR ticket_id=$1) ORDER BY scanned_at DESC`, ticketID)
