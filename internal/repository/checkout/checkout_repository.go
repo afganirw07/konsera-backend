@@ -3,6 +3,7 @@ package checkout
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"konsera-backend/internal/models"
 	"time"
@@ -13,6 +14,13 @@ import (
 type Repository struct{ db *sql.DB }
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
+
+var ErrTicketInventoryUnavailable = errors.New("ticket inventory is not available")
+
+func inventoryAvailable(total, sold, held, quantity int) bool {
+	return total-sold-held >= quantity
+}
+
 func scanCart(s interface{ Scan(...any) error }) (*models.Cart, error) {
 	x := &models.Cart{}
 	e := s.Scan(&x.ID, &x.UserID, &x.TicketTierID, &x.EventSessionID, &x.SeatID, &x.Quantity, &x.HeldUntil, &x.CreatedAt)
@@ -49,8 +57,8 @@ func (r *Repository) CreateCart(ctx context.Context, x *models.Cart) error {
 	if e != nil {
 		return e
 	}
-	if total-sold-held < x.Quantity {
-		return fmt.Errorf("ticket inventory is not available")
+	if !inventoryAvailable(total, sold, held, x.Quantity) {
+		return fmt.Errorf("reserve ticket inventory: %w", ErrTicketInventoryUnavailable)
 	}
 	if _, e = tx.ExecContext(ctx, `UPDATE ticket_inventories SET held_count=held_count+$3,version=version+1,updated_at=NOW() WHERE ticket_tier_id=$1 AND event_session_id=$2`, x.TicketTierID, x.EventSessionID, x.Quantity); e != nil {
 		return e
@@ -79,8 +87,8 @@ func (r *Repository) UpdateCart(ctx context.Context, user, id uuid.UUID, qty int
 		if e = tx.QueryRowContext(ctx, `SELECT total_quota,sold_count,held_count FROM ticket_inventories WHERE ticket_tier_id=$1 AND event_session_id=$2 FOR UPDATE`, old.TicketTierID, old.EventSessionID).Scan(&total, &sold, &held); e != nil {
 			return nil, e
 		}
-		if total-sold-held < delta {
-			return nil, fmt.Errorf("ticket inventory is not available")
+		if !inventoryAvailable(total, sold, held, delta) {
+			return nil, fmt.Errorf("reserve ticket inventory: %w", ErrTicketInventoryUnavailable)
 		}
 	}
 	if _, e = tx.ExecContext(ctx, `UPDATE carts SET quantity=$3 WHERE user_id=$1 AND id=$2`, user, id, qty); e != nil {
