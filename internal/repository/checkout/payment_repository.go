@@ -15,7 +15,7 @@ func scanMethod(s interface{ Scan(...any) error }) (*models.PaymentMethod, error
 	return x, e
 }
 func (r *Repository) Methods(ctx context.Context) ([]*models.PaymentMethod, error) {
-	rows, e := r.db.QueryContext(ctx, `SELECT id,name,type,provider,is_active,icon_url FROM payment_methods ORDER BY name`)
+	rows, e := r.db.QueryContext(ctx, `SELECT id,name,type,provider,is_active,icon_url FROM payment_methods WHERE deleted_at IS NULL ORDER BY name`)
 	if e != nil {
 		return nil, e
 	}
@@ -34,10 +34,10 @@ func (r *Repository) CreateMethod(ctx context.Context, x *models.PaymentMethod) 
 	return r.db.QueryRowContext(ctx, `INSERT INTO payment_methods(name,type,provider,icon_url) VALUES($1,$2,$3,$4) RETURNING id,name,type,provider,is_active,icon_url`, x.Name, x.Type, x.Provider, x.IconURL).Scan(&x.ID, &x.Name, &x.Type, &x.Provider, &x.IsActive, &x.IconURL)
 }
 func (r *Repository) UpdateMethod(ctx context.Context, id uuid.UUID, q *checkout.UpdatePaymentMethodRequest) (*models.PaymentMethod, error) {
-	return scanMethod(r.db.QueryRowContext(ctx, `UPDATE payment_methods SET name=COALESCE($2,name),type=COALESCE($3,type),provider=COALESCE($4,provider),is_active=COALESCE($5,is_active),icon_url=COALESCE($6,icon_url) WHERE id=$1 RETURNING id,name,type,provider,is_active,icon_url`, id, q.Name, q.Type, q.Provider, q.IsActive, q.IconURL))
+	return scanMethod(r.db.QueryRowContext(ctx, `UPDATE payment_methods SET name=COALESCE($2,name),type=COALESCE($3,type),provider=COALESCE($4,provider),is_active=COALESCE($5,is_active),icon_url=COALESCE($6,icon_url) WHERE id=$1 AND deleted_at IS NULL RETURNING id,name,type,provider,is_active,icon_url`, id, q.Name, q.Type, q.Provider, q.IsActive, q.IconURL))
 }
 func (r *Repository) DeleteMethod(ctx context.Context, id uuid.UUID) error {
-	res, e := r.db.ExecContext(ctx, `DELETE FROM payment_methods WHERE id=$1`, id)
+	res, e := r.db.ExecContext(ctx, `UPDATE payment_methods SET deleted_at=NOW() WHERE id=$1 AND deleted_at IS NULL`, id)
 	if e != nil {
 		return e
 	}
@@ -73,7 +73,7 @@ func (r *Repository) CreatePayment(ctx context.Context, user uuid.UUID, x *model
 		INSERT INTO payments(booking_id,payment_method_id,amount,expires_at)
 		SELECT b.id, $2, b.total_amount, $3
 		FROM bookings b
-		JOIN payment_methods pm ON pm.id=$2 AND pm.is_active=TRUE
+		JOIN payment_methods pm ON pm.id=$2 AND pm.is_active=TRUE AND pm.deleted_at IS NULL
 		WHERE b.id=$1 AND b.user_id=$4 AND b.status IN ('pending','awaiting_payment')
 		RETURNING id,booking_id,payment_method_id,provider_transaction_id,amount,status,expires_at,paid_at,created_at,updated_at
 	`, x.BookingID, x.PaymentMethodID, x.ExpiresAt, user).Scan(&x.ID, &x.BookingID, &x.PaymentMethodID, &x.ProviderTransactionID, &x.Amount, &x.Status, &x.ExpiresAt, &x.PaidAt, &x.CreatedAt, &x.UpdatedAt)

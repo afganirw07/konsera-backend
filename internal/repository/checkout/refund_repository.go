@@ -32,7 +32,7 @@ func (r *Repository) CreateRefund(ctx context.Context, x *models.Refund) error {
 	return nil
 }
 func (r *Repository) Refunds(ctx context.Context, user uuid.UUID) ([]*models.Refund, error) {
-	rows, e := r.db.QueryContext(ctx, `SELECT `+refundCols+` FROM refunds r JOIN bookings b ON b.id=r.booking_id WHERE b.user_id=$1 ORDER BY r.created_at DESC`, user)
+	rows, e := r.db.QueryContext(ctx, `SELECT `+refundCols+` FROM refunds r JOIN bookings b ON b.id=r.booking_id WHERE b.user_id=$1 AND r.deleted_at IS NULL ORDER BY r.created_at DESC`, user)
 	if e != nil {
 		return nil, e
 	}
@@ -48,10 +48,10 @@ func (r *Repository) Refunds(ctx context.Context, user uuid.UUID) ([]*models.Ref
 	return out, rows.Err()
 }
 func (r *Repository) UpdateRefund(ctx context.Context, id uuid.UUID, q *dto.UpdateRefundRequest) (*models.Refund, error) {
-	return scanRefund(r.db.QueryRowContext(ctx, `UPDATE refunds SET status=$2,processed_at=CASE WHEN $2='processed' THEN NOW() ELSE processed_at END WHERE id=$1 RETURNING `+refundCols, id, q.Status))
+	return scanRefund(r.db.QueryRowContext(ctx, `UPDATE refunds SET status=$2,processed_at=CASE WHEN $2='processed' THEN NOW() ELSE processed_at END WHERE id=$1 AND deleted_at IS NULL RETURNING `+refundCols, id, q.Status))
 }
 func (r *Repository) DeleteRefund(ctx context.Context, id uuid.UUID) error {
-	res, e := r.db.ExecContext(ctx, `DELETE FROM refunds WHERE id=$1`, id)
+	res, e := r.db.ExecContext(ctx, `UPDATE refunds SET deleted_at=NOW() WHERE id=$1 AND deleted_at IS NULL`, id)
 	if e != nil {
 		return e
 	}

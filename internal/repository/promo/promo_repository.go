@@ -22,7 +22,7 @@ func scan(s interface{ Scan(...any) error }) (*models.PromoCode, error) {
 	return x, e
 }
 func (r *Repository) List(ctx context.Context) ([]*models.PromoCode, error) {
-	rows, e := r.db.QueryContext(ctx, `SELECT `+cols+` FROM promo_codes ORDER BY created_at DESC`)
+	rows, e := r.db.QueryContext(ctx, `SELECT `+cols+` FROM promo_codes WHERE deleted_at IS NULL ORDER BY created_at DESC`)
 	if e != nil {
 		return nil, e
 	}
@@ -38,7 +38,7 @@ func (r *Repository) List(ctx context.Context) ([]*models.PromoCode, error) {
 	return out, rows.Err()
 }
 func (r *Repository) Get(ctx context.Context, id uuid.UUID) (*models.PromoCode, error) {
-	return scan(r.db.QueryRowContext(ctx, `SELECT `+cols+` FROM promo_codes WHERE id=$1`, id))
+	return scan(r.db.QueryRowContext(ctx, `SELECT `+cols+` FROM promo_codes WHERE id=$1 AND deleted_at IS NULL`, id))
 }
 func (r *Repository) Create(ctx context.Context, x *models.PromoCode) error {
 	y, e := scan(r.db.QueryRowContext(ctx, `INSERT INTO promo_codes(code,event_id,discount_type,discount_value,max_discount_amount,usage_limit,per_user_limit,valid_from,valid_until) VALUES($1,$2,$3,$4,$5,$6,COALESCE(NULLIF($7,0),1),$8,$9) RETURNING `+cols, x.Code, x.EventID, x.DiscountType, x.DiscountValue, x.MaxDiscountAmount, x.UsageLimit, x.PerUserLimit, x.ValidFrom, x.ValidUntil))
@@ -58,10 +58,10 @@ func (r *Repository) Update(ctx context.Context, id uuid.UUID, q *promo.UpdatePr
 		}
 		eventID = &v
 	}
-	return scan(r.db.QueryRowContext(ctx, `UPDATE promo_codes SET code=COALESCE($2,code),event_id=COALESCE($3,event_id),discount_type=COALESCE($4,discount_type),discount_value=COALESCE($5,discount_value),max_discount_amount=COALESCE($6,max_discount_amount),usage_limit=COALESCE($7,usage_limit),per_user_limit=COALESCE($8,per_user_limit),valid_from=COALESCE($9,valid_from),valid_until=COALESCE($10,valid_until),is_active=COALESCE($11,is_active) WHERE id=$1 RETURNING `+cols, id, q.Code, eventID, q.DiscountType, q.DiscountValue, q.MaxDiscountAmount, q.UsageLimit, q.PerUserLimit, q.ValidFrom, q.ValidUntil, q.IsActive))
+	return scan(r.db.QueryRowContext(ctx, `UPDATE promo_codes SET code=COALESCE($2,code),event_id=COALESCE($3,event_id),discount_type=COALESCE($4,discount_type),discount_value=COALESCE($5,discount_value),max_discount_amount=COALESCE($6,max_discount_amount),usage_limit=COALESCE($7,usage_limit),per_user_limit=COALESCE($8,per_user_limit),valid_from=COALESCE($9,valid_from),valid_until=COALESCE($10,valid_until),is_active=COALESCE($11,is_active) WHERE id=$1 AND deleted_at IS NULL RETURNING `+cols, id, q.Code, eventID, q.DiscountType, q.DiscountValue, q.MaxDiscountAmount, q.UsageLimit, q.PerUserLimit, q.ValidFrom, q.ValidUntil, q.IsActive))
 }
 func (r *Repository) Delete(ctx context.Context, id uuid.UUID) error {
-	res, e := r.db.ExecContext(ctx, `DELETE FROM promo_codes WHERE id=$1`, id)
+	res, e := r.db.ExecContext(ctx, `UPDATE promo_codes SET deleted_at=NOW() WHERE id=$1 AND deleted_at IS NULL`, id)
 	if e != nil {
 		return e
 	}
@@ -77,7 +77,7 @@ func (r *Repository) Apply(ctx context.Context, user, booking uuid.UUID, code st
 		return nil, e
 	}
 	defer tx.Rollback()
-	p, e := scan(tx.QueryRowContext(ctx, `SELECT `+cols+` FROM promo_codes WHERE UPPER(code)=UPPER($1) AND is_active=TRUE AND NOW() BETWEEN valid_from AND valid_until FOR UPDATE`, code))
+	p, e := scan(tx.QueryRowContext(ctx, `SELECT `+cols+` FROM promo_codes WHERE UPPER(code)=UPPER($1) AND is_active=TRUE AND deleted_at IS NULL AND NOW() BETWEEN valid_from AND valid_until FOR UPDATE`, code))
 	if e != nil {
 		return nil, e
 	}

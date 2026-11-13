@@ -7,15 +7,16 @@ import (
 )
 
 type Review struct {
-	ID        uuid.UUID `json:"id"`
-	EventID   uuid.UUID `json:"event_id"`
-	UserID    uuid.UUID `json:"user_id"`
-	BookingID uuid.UUID `json:"booking_id"`
-	Rating    int16     `json:"rating"`
-	Comment   *string   `json:"comment,omitempty"`
-	PhotoURLs []string  `json:"photo_urls,omitempty"`
-	Status    string    `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        uuid.UUID  `json:"id"`
+	EventID   uuid.UUID  `json:"event_id"`
+	UserID    uuid.UUID  `json:"user_id"`
+	BookingID uuid.UUID  `json:"booking_id"`
+	Rating    int16      `json:"rating"`
+	Comment   *string    `json:"comment,omitempty"`
+	PhotoURLs []string   `json:"photo_urls,omitempty"`
+	Status    string     `json:"status"`
+	CreatedAt time.Time  `json:"created_at"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 }
 type Favorite struct {
 	ID        uuid.UUID `json:"id"`

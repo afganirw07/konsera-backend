@@ -18,7 +18,7 @@ func scanCommission(s interface{ Scan(...any) error }) (*models.CommissionSettin
 const commissionCols = `id,scope,scope_ref_id,rate_percentage,effective_from,created_at`
 
 func (r *Repository) Commissions(ctx context.Context) ([]*models.CommissionSetting, error) {
-	rows, e := r.db.QueryContext(ctx, `SELECT `+commissionCols+` FROM commission_settings ORDER BY effective_from DESC`)
+	rows, e := r.db.QueryContext(ctx, `SELECT `+commissionCols+` FROM commission_settings WHERE deleted_at IS NULL ORDER BY effective_from DESC`)
 	if e != nil {
 		return nil, e
 	}
@@ -42,10 +42,10 @@ func (r *Repository) CreateCommission(ctx context.Context, x *models.CommissionS
 	return nil
 }
 func (r *Repository) UpdateCommission(ctx context.Context, id uuid.UUID, q *dto.UpdateCommissionRequest) (*models.CommissionSetting, error) {
-	return scanCommission(r.db.QueryRowContext(ctx, `UPDATE commission_settings SET rate_percentage=COALESCE($2,rate_percentage),effective_from=COALESCE($3,effective_from) WHERE id=$1 RETURNING `+commissionCols, id, q.RatePercentage, q.EffectiveFrom))
+	return scanCommission(r.db.QueryRowContext(ctx, `UPDATE commission_settings SET rate_percentage=COALESCE($2,rate_percentage),effective_from=COALESCE($3,effective_from) WHERE id=$1 AND deleted_at IS NULL RETURNING `+commissionCols, id, q.RatePercentage, q.EffectiveFrom))
 }
 func (r *Repository) DeleteCommission(ctx context.Context, id uuid.UUID) error {
-	res, e := r.db.ExecContext(ctx, `DELETE FROM commission_settings WHERE id=$1`, id)
+	res, e := r.db.ExecContext(ctx, `UPDATE commission_settings SET deleted_at=NOW() WHERE id=$1 AND deleted_at IS NULL`, id)
 	if e != nil {
 		return e
 	}
@@ -64,7 +64,7 @@ func scanPayout(s interface{ Scan(...any) error }) (*models.Payout, error) {
 const payoutCols = `id,organizer_id,event_id,gross_amount,commission_amount,net_amount,status,scheduled_at,paid_at,bank_reference,created_at`
 
 func (r *Repository) Payouts(ctx context.Context) ([]*models.Payout, error) {
-	rows, e := r.db.QueryContext(ctx, `SELECT `+payoutCols+` FROM payouts ORDER BY scheduled_at DESC`)
+	rows, e := r.db.QueryContext(ctx, `SELECT `+payoutCols+` FROM payouts WHERE deleted_at IS NULL ORDER BY scheduled_at DESC`)
 	if e != nil {
 		return nil, e
 	}
@@ -88,10 +88,10 @@ func (r *Repository) CreatePayout(ctx context.Context, x *models.Payout) error {
 	return nil
 }
 func (r *Repository) UpdatePayout(ctx context.Context, id uuid.UUID, q *dto.UpdatePayoutRequest) (*models.Payout, error) {
-	return scanPayout(r.db.QueryRowContext(ctx, `UPDATE payouts SET status=COALESCE($2,status),paid_at=COALESCE($3,paid_at),bank_reference=COALESCE($4,bank_reference) WHERE id=$1 RETURNING `+payoutCols, id, q.Status, q.PaidAt, q.BankReference))
+	return scanPayout(r.db.QueryRowContext(ctx, `UPDATE payouts SET status=COALESCE($2,status),paid_at=COALESCE($3,paid_at),bank_reference=COALESCE($4,bank_reference) WHERE id=$1 AND deleted_at IS NULL RETURNING `+payoutCols, id, q.Status, q.PaidAt, q.BankReference))
 }
 func (r *Repository) DeletePayout(ctx context.Context, id uuid.UUID) error {
-	res, e := r.db.ExecContext(ctx, `DELETE FROM payouts WHERE id=$1`, id)
+	res, e := r.db.ExecContext(ctx, `UPDATE payouts SET deleted_at=NOW() WHERE id=$1 AND deleted_at IS NULL`, id)
 	if e != nil {
 		return e
 	}
@@ -110,7 +110,7 @@ func scanAudit(s interface{ Scan(...any) error }) (*models.AuditLog, error) {
 const auditCols = `id,actor_user_id,action,entity_type,entity_id,before_state,after_state,ip_address,user_agent,created_at`
 
 func (r *Repository) Audits(ctx context.Context) ([]*models.AuditLog, error) {
-	rows, e := r.db.QueryContext(ctx, `SELECT `+auditCols+` FROM audit_logs ORDER BY created_at DESC`)
+	rows, e := r.db.QueryContext(ctx, `SELECT `+auditCols+` FROM audit_logs WHERE deleted_at IS NULL ORDER BY created_at DESC`)
 	if e != nil {
 		return nil, e
 	}
@@ -134,7 +134,7 @@ func (r *Repository) CreateAudit(ctx context.Context, x *models.AuditLog) error 
 	return nil
 }
 func (r *Repository) DeleteAudit(ctx context.Context, id uuid.UUID) error {
-	res, e := r.db.ExecContext(ctx, `DELETE FROM audit_logs WHERE id=$1`, id)
+	res, e := r.db.ExecContext(ctx, `UPDATE audit_logs SET deleted_at=NOW() WHERE id=$1 AND deleted_at IS NULL`, id)
 	if e != nil {
 		return e
 	}

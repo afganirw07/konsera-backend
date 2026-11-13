@@ -24,7 +24,7 @@ func scanTemplate(s interface{ Scan(...any) error }) (*models.NotificationTempla
 }
 
 func (r *Repository) ListTemplates(ctx context.Context) ([]*models.NotificationTemplate, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT `+templateColumns+` FROM notification_templates ORDER BY code, channel`)
+	rows, err := r.db.QueryContext(ctx, `SELECT `+templateColumns+` FROM notification_templates WHERE deleted_at IS NULL ORDER BY code, channel`)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (r *Repository) ListTemplates(ctx context.Context) ([]*models.NotificationT
 }
 
 func (r *Repository) GetTemplate(ctx context.Context, id uuid.UUID) (*models.NotificationTemplate, error) {
-	return scanTemplate(r.db.QueryRowContext(ctx, `SELECT `+templateColumns+` FROM notification_templates WHERE id=$1`, id))
+	return scanTemplate(r.db.QueryRowContext(ctx, `SELECT `+templateColumns+` FROM notification_templates WHERE id=$1 AND deleted_at IS NULL`, id))
 }
 
 func (r *Repository) CreateTemplate(ctx context.Context, item *models.NotificationTemplate) error {
@@ -54,11 +54,11 @@ func (r *Repository) CreateTemplate(ctx context.Context, item *models.Notificati
 }
 
 func (r *Repository) UpdateTemplate(ctx context.Context, id uuid.UUID, q *dto.UpdateNotificationTemplateRequest) (*models.NotificationTemplate, error) {
-	return scanTemplate(r.db.QueryRowContext(ctx, `UPDATE notification_templates SET code=COALESCE($2,code),channel=COALESCE($3,channel),subject=COALESCE($4,subject),body_template=COALESCE($5,body_template) WHERE id=$1 RETURNING `+templateColumns, id, q.Code, q.Channel, q.Subject, q.BodyTemplate))
+	return scanTemplate(r.db.QueryRowContext(ctx, `UPDATE notification_templates SET code=COALESCE($2,code),channel=COALESCE($3,channel),subject=COALESCE($4,subject),body_template=COALESCE($5,body_template) WHERE id=$1 AND deleted_at IS NULL RETURNING `+templateColumns, id, q.Code, q.Channel, q.Subject, q.BodyTemplate))
 }
 
 func (r *Repository) DeleteTemplate(ctx context.Context, id uuid.UUID) error {
-	result, err := r.db.ExecContext(ctx, `DELETE FROM notification_templates WHERE id=$1`, id)
+	result, err := r.db.ExecContext(ctx, `UPDATE notification_templates SET deleted_at=NOW() WHERE id=$1 AND deleted_at IS NULL`, id)
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func scanNotification(s interface{ Scan(...any) error }) (*models.Notification, 
 }
 
 func (r *Repository) List(ctx context.Context, userID uuid.UUID) ([]*models.Notification, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT `+notificationColumns+` FROM notifications WHERE user_id=$1 ORDER BY created_at DESC`, userID)
+	rows, err := r.db.QueryContext(ctx, `SELECT `+notificationColumns+` FROM notifications WHERE user_id=$1 AND deleted_at IS NULL ORDER BY created_at DESC`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (r *Repository) List(ctx context.Context, userID uuid.UUID) ([]*models.Noti
 }
 
 func (r *Repository) Get(ctx context.Context, userID, id uuid.UUID) (*models.Notification, error) {
-	return scanNotification(r.db.QueryRowContext(ctx, `SELECT `+notificationColumns+` FROM notifications WHERE user_id=$1 AND id=$2`, userID, id))
+	return scanNotification(r.db.QueryRowContext(ctx, `SELECT `+notificationColumns+` FROM notifications WHERE user_id=$1 AND id=$2 AND deleted_at IS NULL`, userID, id))
 }
 
 func (r *Repository) Create(ctx context.Context, item *models.Notification) error {
@@ -119,11 +119,11 @@ func (r *Repository) Create(ctx context.Context, item *models.Notification) erro
 }
 
 func (r *Repository) Update(ctx context.Context, userID, id uuid.UUID, q *dto.UpdateNotificationRequest) (*models.Notification, error) {
-	return scanNotification(r.db.QueryRowContext(ctx, `UPDATE notifications SET title=COALESCE($3,title),body=COALESCE($4,body),status=COALESCE($5,status),metadata=COALESCE($6,metadata),read_at=CASE WHEN $7 IS TRUE THEN COALESCE(read_at,NOW()) WHEN $7 IS FALSE THEN NULL ELSE read_at END WHERE user_id=$1 AND id=$2 RETURNING `+notificationColumns, userID, id, q.Title, q.Body, q.Status, q.Metadata, q.Read))
+	return scanNotification(r.db.QueryRowContext(ctx, `UPDATE notifications SET title=COALESCE($3,title),body=COALESCE($4,body),status=COALESCE($5,status),metadata=COALESCE($6,metadata),read_at=CASE WHEN $7 IS TRUE THEN COALESCE(read_at,NOW()) WHEN $7 IS FALSE THEN NULL ELSE read_at END WHERE user_id=$1 AND id=$2 AND deleted_at IS NULL RETURNING `+notificationColumns, userID, id, q.Title, q.Body, q.Status, q.Metadata, q.Read))
 }
 
 func (r *Repository) Delete(ctx context.Context, userID, id uuid.UUID) error {
-	result, err := r.db.ExecContext(ctx, `DELETE FROM notifications WHERE user_id=$1 AND id=$2`, userID, id)
+	result, err := r.db.ExecContext(ctx, `UPDATE notifications SET deleted_at=NOW() WHERE user_id=$1 AND id=$2 AND deleted_at IS NULL`, userID, id)
 	if err != nil {
 		return err
 	}

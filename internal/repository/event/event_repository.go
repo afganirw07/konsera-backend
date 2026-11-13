@@ -16,12 +16,12 @@ func scan(scanner interface{ Scan(...any) error }, dst ...any) error { return sc
 
 func (r *EventRepository) Category(ctx context.Context, id uuid.UUID) (*models.EventCategory, error) {
 	x := &models.EventCategory{}
-	e := r.db.QueryRowContext(ctx, "SELECT id,name,slug,icon_url FROM event_categories WHERE id=$1", id)
+	e := r.db.QueryRowContext(ctx, "SELECT id,name,slug,icon_url FROM event_categories WHERE id=$1 AND deleted_at IS NULL", id)
 	err := scan(e, &x.ID, &x.Name, &x.Slug, &x.IconURL)
 	return x, err
 }
 func (r *EventRepository) Categories(ctx context.Context) ([]*models.EventCategory, error) {
-	rows, e := r.db.QueryContext(ctx, "SELECT id,name,slug,icon_url FROM event_categories ORDER BY name")
+	rows, e := r.db.QueryContext(ctx, "SELECT id,name,slug,icon_url FROM event_categories WHERE deleted_at IS NULL ORDER BY name")
 	if e != nil {
 		return nil, e
 	}
@@ -41,12 +41,12 @@ func (r *EventRepository) CreateCategory(ctx context.Context, x *models.EventCat
 }
 func (r *EventRepository) UpdateCategory(ctx context.Context, id uuid.UUID, q *dto.UpdateCategoryRequest) (*models.EventCategory, error) {
 	x := &models.EventCategory{}
-	e := r.db.QueryRowContext(ctx, "UPDATE event_categories SET name=COALESCE($2,name),slug=COALESCE($3,slug),icon_url=COALESCE($4,icon_url) WHERE id=$1 RETURNING id,name,slug,icon_url", id, q.Name, q.Slug, q.IconURL)
+	e := r.db.QueryRowContext(ctx, "UPDATE event_categories SET name=COALESCE($2,name),slug=COALESCE($3,slug),icon_url=COALESCE($4,icon_url) WHERE id=$1 AND deleted_at IS NULL RETURNING id,name,slug,icon_url", id, q.Name, q.Slug, q.IconURL)
 	err := scan(e, &x.ID, &x.Name, &x.Slug, &x.IconURL)
 	return x, err
 }
 func (r *EventRepository) DeleteCategory(ctx context.Context, id uuid.UUID) error {
-	res, e := r.db.ExecContext(ctx, "DELETE FROM event_categories WHERE id=$1", id)
+	res, e := r.db.ExecContext(ctx, "UPDATE event_categories SET deleted_at=NOW() WHERE id=$1 AND deleted_at IS NULL", id)
 	if e != nil {
 		return e
 	}
@@ -126,7 +126,7 @@ func (r *EventRepository) SetCategories(ctx context.Context, eventID uuid.UUID, 
 }
 
 func (r *EventRepository) Sessions(ctx context.Context, eventID uuid.UUID) ([]*models.EventSession, error) {
-	rows, e := r.db.QueryContext(ctx, "SELECT id,event_id,session_name,start_at,end_at,gate_open_at,gate_close_at,status,created_at FROM event_sessions WHERE event_id=$1 ORDER BY start_at", eventID)
+	rows, e := r.db.QueryContext(ctx, "SELECT id,event_id,session_name,start_at,end_at,gate_open_at,gate_close_at,status,created_at FROM event_sessions WHERE event_id=$1 AND deleted_at IS NULL ORDER BY start_at", eventID)
 	if e != nil {
 		return nil, e
 	}
@@ -146,18 +146,18 @@ func (r *EventRepository) CreateSession(ctx context.Context, x *models.EventSess
 }
 func (r *EventRepository) Session(ctx context.Context, eventID, id uuid.UUID) (*models.EventSession, error) {
 	x := &models.EventSession{}
-	e := r.db.QueryRowContext(ctx, "SELECT id,event_id,session_name,start_at,end_at,gate_open_at,gate_close_at,status,created_at FROM event_sessions WHERE event_id=$1 AND id=$2", eventID, id)
+	e := r.db.QueryRowContext(ctx, "SELECT id,event_id,session_name,start_at,end_at,gate_open_at,gate_close_at,status,created_at FROM event_sessions WHERE event_id=$1 AND id=$2 AND deleted_at IS NULL", eventID, id)
 	err := scan(e, &x.ID, &x.EventID, &x.SessionName, &x.StartAt, &x.EndAt, &x.GateOpenAt, &x.GateCloseAt, &x.Status, &x.CreatedAt)
 	return x, err
 }
 func (r *EventRepository) UpdateSession(ctx context.Context, eventID, id uuid.UUID, q *dto.UpdateSessionRequest) (*models.EventSession, error) {
 	x := &models.EventSession{}
-	e := r.db.QueryRowContext(ctx, "UPDATE event_sessions SET session_name=COALESCE($3,session_name),start_at=COALESCE($4,start_at),end_at=COALESCE($5,end_at),gate_open_at=COALESCE($6,gate_open_at),gate_close_at=COALESCE($7,gate_close_at),status=COALESCE($8,status) WHERE event_id=$1 AND id=$2 RETURNING id,event_id,session_name,start_at,end_at,gate_open_at,gate_close_at,status,created_at", eventID, id, q.SessionName, q.StartAt, q.EndAt, q.GateOpenAt, q.GateCloseAt, q.Status)
+	e := r.db.QueryRowContext(ctx, "UPDATE event_sessions SET session_name=COALESCE($3,session_name),start_at=COALESCE($4,start_at),end_at=COALESCE($5,end_at),gate_open_at=COALESCE($6,gate_open_at),gate_close_at=COALESCE($7,gate_close_at),status=COALESCE($8,status) WHERE event_id=$1 AND id=$2 AND deleted_at IS NULL RETURNING id,event_id,session_name,start_at,end_at,gate_open_at,gate_close_at,status,created_at", eventID, id, q.SessionName, q.StartAt, q.EndAt, q.GateOpenAt, q.GateCloseAt, q.Status)
 	err := scan(e, &x.ID, &x.EventID, &x.SessionName, &x.StartAt, &x.EndAt, &x.GateOpenAt, &x.GateCloseAt, &x.Status, &x.CreatedAt)
 	return x, err
 }
 func (r *EventRepository) DeleteSession(ctx context.Context, eventID, id uuid.UUID) error {
-	res, e := r.db.ExecContext(ctx, "DELETE FROM event_sessions WHERE event_id=$1 AND id=$2", eventID, id)
+	res, e := r.db.ExecContext(ctx, "UPDATE event_sessions SET deleted_at=NOW() WHERE event_id=$1 AND id=$2 AND deleted_at IS NULL", eventID, id)
 	if e != nil {
 		return e
 	}
@@ -169,7 +169,7 @@ func (r *EventRepository) DeleteSession(ctx context.Context, eventID, id uuid.UU
 }
 
 func (r *EventRepository) Artists(ctx context.Context) ([]*models.Artist, error) {
-	rows, e := r.db.QueryContext(ctx, "SELECT id,name,bio,photo_url,created_at FROM artists ORDER BY name")
+	rows, e := r.db.QueryContext(ctx, "SELECT id,name,bio,photo_url,created_at FROM artists WHERE deleted_at IS NULL ORDER BY name")
 	if e != nil {
 		return nil, e
 	}
@@ -186,7 +186,7 @@ func (r *EventRepository) Artists(ctx context.Context) ([]*models.Artist, error)
 }
 func (r *EventRepository) Artist(ctx context.Context, id uuid.UUID) (*models.Artist, error) {
 	x := &models.Artist{}
-	e := r.db.QueryRowContext(ctx, "SELECT id,name,bio,photo_url,created_at FROM artists WHERE id=$1", id)
+	e := r.db.QueryRowContext(ctx, "SELECT id,name,bio,photo_url,created_at FROM artists WHERE id=$1 AND deleted_at IS NULL", id)
 	err := scan(e, &x.ID, &x.Name, &x.Bio, &x.PhotoURL, &x.CreatedAt)
 	return x, err
 }
@@ -195,12 +195,12 @@ func (r *EventRepository) CreateArtist(ctx context.Context, x *models.Artist) er
 }
 func (r *EventRepository) UpdateArtist(ctx context.Context, id uuid.UUID, q *dto.UpdateArtistRequest) (*models.Artist, error) {
 	x := &models.Artist{}
-	e := r.db.QueryRowContext(ctx, "UPDATE artists SET name=COALESCE($2,name),bio=COALESCE($3,bio),photo_url=COALESCE($4,photo_url) WHERE id=$1 RETURNING id,name,bio,photo_url,created_at", id, q.Name, q.Bio, q.PhotoURL)
+	e := r.db.QueryRowContext(ctx, "UPDATE artists SET name=COALESCE($2,name),bio=COALESCE($3,bio),photo_url=COALESCE($4,photo_url) WHERE id=$1 AND deleted_at IS NULL RETURNING id,name,bio,photo_url,created_at", id, q.Name, q.Bio, q.PhotoURL)
 	err := scan(e, &x.ID, &x.Name, &x.Bio, &x.PhotoURL, &x.CreatedAt)
 	return x, err
 }
 func (r *EventRepository) DeleteArtist(ctx context.Context, id uuid.UUID) error {
-	res, e := r.db.ExecContext(ctx, "DELETE FROM artists WHERE id=$1", id)
+	res, e := r.db.ExecContext(ctx, "UPDATE artists SET deleted_at=NOW() WHERE id=$1 AND deleted_at IS NULL", id)
 	if e != nil {
 		return e
 	}
@@ -211,7 +211,7 @@ func (r *EventRepository) DeleteArtist(ctx context.Context, id uuid.UUID) error 
 	return nil
 }
 func (r *EventRepository) EventArtists(ctx context.Context, sessionID uuid.UUID) ([]*models.EventArtist, error) {
-	rows, e := r.db.QueryContext(ctx, "SELECT id,event_session_id,artist_id,role,performance_order,stage_time FROM event_artists WHERE event_session_id=$1 ORDER BY performance_order NULLS LAST,id", sessionID)
+	rows, e := r.db.QueryContext(ctx, "SELECT id,event_session_id,artist_id,role,performance_order,stage_time FROM event_artists WHERE event_session_id=$1 AND deleted_at IS NULL ORDER BY performance_order NULLS LAST,id", sessionID)
 	if e != nil {
 		return nil, e
 	}
@@ -228,7 +228,7 @@ func (r *EventRepository) EventArtists(ctx context.Context, sessionID uuid.UUID)
 }
 func (r *EventRepository) EventArtist(ctx context.Context, sessionID, id uuid.UUID) (*models.EventArtist, error) {
 	x := &models.EventArtist{}
-	e := r.db.QueryRowContext(ctx, "SELECT id,event_session_id,artist_id,role,performance_order,stage_time FROM event_artists WHERE event_session_id=$1 AND id=$2", sessionID, id)
+	e := r.db.QueryRowContext(ctx, "SELECT id,event_session_id,artist_id,role,performance_order,stage_time FROM event_artists WHERE event_session_id=$1 AND id=$2 AND deleted_at IS NULL", sessionID, id)
 	err := scan(e, &x.ID, &x.EventSessionID, &x.ArtistID, &x.Role, &x.PerformanceOrder, &x.StageTime)
 	return x, err
 }
@@ -237,12 +237,12 @@ func (r *EventRepository) CreateEventArtist(ctx context.Context, x *models.Event
 }
 func (r *EventRepository) UpdateEventArtist(ctx context.Context, sessionID, id uuid.UUID, q *dto.UpdateEventArtistRequest) (*models.EventArtist, error) {
 	x := &models.EventArtist{}
-	e := r.db.QueryRowContext(ctx, "UPDATE event_artists SET artist_id=COALESCE($3,artist_id),role=COALESCE($4,role),performance_order=COALESCE($5,performance_order),stage_time=COALESCE($6,stage_time) WHERE event_session_id=$1 AND id=$2 RETURNING id,event_session_id,artist_id,role,performance_order,stage_time", sessionID, id, q.ArtistID, q.Role, q.PerformanceOrder, q.StageTime)
+	e := r.db.QueryRowContext(ctx, "UPDATE event_artists SET artist_id=COALESCE($3,artist_id),role=COALESCE($4,role),performance_order=COALESCE($5,performance_order),stage_time=COALESCE($6,stage_time) WHERE event_session_id=$1 AND id=$2 AND deleted_at IS NULL RETURNING id,event_session_id,artist_id,role,performance_order,stage_time", sessionID, id, q.ArtistID, q.Role, q.PerformanceOrder, q.StageTime)
 	err := scan(e, &x.ID, &x.EventSessionID, &x.ArtistID, &x.Role, &x.PerformanceOrder, &x.StageTime)
 	return x, err
 }
 func (r *EventRepository) DeleteEventArtist(ctx context.Context, sessionID, id uuid.UUID) error {
-	res, e := r.db.ExecContext(ctx, "DELETE FROM event_artists WHERE event_session_id=$1 AND id=$2", sessionID, id)
+	res, e := r.db.ExecContext(ctx, "UPDATE event_artists SET deleted_at=NOW() WHERE event_session_id=$1 AND id=$2 AND deleted_at IS NULL", sessionID, id)
 	if e != nil {
 		return e
 	}

@@ -1,0 +1,17 @@
+ALTER TABLE event_categories ADD COLUMN deleted_at TIMESTAMPTZ;
+ALTER TABLE event_sessions ADD COLUMN deleted_at TIMESTAMPTZ;
+ALTER TABLE artists ADD COLUMN deleted_at TIMESTAMPTZ;
+ALTER TABLE event_artists ADD COLUMN deleted_at TIMESTAMPTZ;
+ALTER TABLE venue_sections ADD COLUMN deleted_at TIMESTAMPTZ;
+ALTER TABLE seats ADD COLUMN deleted_at TIMESTAMPTZ;
+ALTER TABLE ticket_tiers ADD COLUMN deleted_at TIMESTAMPTZ;
+ALTER TABLE ticket_inventories ADD COLUMN deleted_at TIMESTAMPTZ;
+ALTER TABLE payment_methods ADD COLUMN deleted_at TIMESTAMPTZ;
+ALTER TABLE refunds ADD COLUMN deleted_at TIMESTAMPTZ;
+ALTER TABLE promo_codes ADD COLUMN deleted_at TIMESTAMPTZ;
+ALTER TABLE notification_templates ADD COLUMN deleted_at TIMESTAMPTZ;
+ALTER TABLE notifications ADD COLUMN deleted_at TIMESTAMPTZ;
+ALTER TABLE commission_settings ADD COLUMN deleted_at TIMESTAMPTZ;
+ALTER TABLE payouts ADD COLUMN deleted_at TIMESTAMPTZ;
+ALTER TABLE audit_logs ADD COLUMN deleted_at TIMESTAMPTZ;
+ALTER TABLE organizer_verifications ADD COLUMN deleted_at TIMESTAMPTZ;

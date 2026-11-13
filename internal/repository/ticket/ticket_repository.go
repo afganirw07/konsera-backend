@@ -38,7 +38,7 @@ func (r *TicketRepository) CreateTier(ctx context.Context, x *models.TicketTier)
 }
 
 func (r *TicketRepository) ListTiers(ctx context.Context, eventID uuid.UUID) ([]*models.TicketTier, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT `+tierColumns+` FROM ticket_tiers WHERE event_id=$1 ORDER BY price,id`, eventID)
+	rows, err := r.db.QueryContext(ctx, `SELECT `+tierColumns+` FROM ticket_tiers WHERE event_id=$1 AND deleted_at IS NULL ORDER BY price,id`, eventID)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (r *TicketRepository) ListTiers(ctx context.Context, eventID uuid.UUID) ([]
 }
 
 func (r *TicketRepository) GetTier(ctx context.Context, eventID, id uuid.UUID) (*models.TicketTier, error) {
-	return scanTier(r.db.QueryRowContext(ctx, `SELECT `+tierColumns+` FROM ticket_tiers WHERE event_id=$1 AND id=$2`, eventID, id))
+	return scanTier(r.db.QueryRowContext(ctx, `SELECT `+tierColumns+` FROM ticket_tiers WHERE event_id=$1 AND id=$2 AND deleted_at IS NULL`, eventID, id))
 }
 
 func (r *TicketRepository) UpdateTier(ctx context.Context, eventID, id uuid.UUID, q *dto.UpdateTicketTierRequest) (*models.TicketTier, error) {
@@ -63,12 +63,12 @@ func (r *TicketRepository) UpdateTier(ctx context.Context, eventID, id uuid.UUID
 		venue_section_id=COALESCE($3,venue_section_id),name=COALESCE($4,name),tier_type=COALESCE($5,tier_type),
 		price=COALESCE($6,price),max_per_transaction=COALESCE($7,max_per_transaction),sale_start_at=COALESCE($8,sale_start_at),
 		sale_end_at=COALESCE($9,sale_end_at),is_seated=COALESCE($10,is_seated)
-		WHERE event_id=$1 AND id=$2 RETURNING `+tierColumns, eventID, id, q.VenueSectionID, q.Name, q.TierType,
+		WHERE event_id=$1 AND id=$2 AND deleted_at IS NULL RETURNING `+tierColumns, eventID, id, q.VenueSectionID, q.Name, q.TierType,
 		q.Price, q.MaxPerTransaction, q.SaleStartAt, q.SaleEndAt, q.IsSeated))
 }
 
 func (r *TicketRepository) DeleteTier(ctx context.Context, eventID, id uuid.UUID) error {
-	result, err := r.db.ExecContext(ctx, `DELETE FROM ticket_tiers WHERE event_id=$1 AND id=$2`, eventID, id)
+	result, err := r.db.ExecContext(ctx, `UPDATE ticket_tiers SET deleted_at=NOW() WHERE event_id=$1 AND id=$2 AND deleted_at IS NULL`, eventID, id)
 	if err != nil {
 		return err
 	}
@@ -98,7 +98,7 @@ func (r *TicketRepository) CreateInventory(ctx context.Context, x *models.Ticket
 	return nil
 }
 func (r *TicketRepository) ListInventory(ctx context.Context, tierID uuid.UUID) ([]*models.TicketInventory, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT `+inventoryColumns+` FROM ticket_inventories WHERE ticket_tier_id=$1 ORDER BY event_session_id`, tierID)
+	rows, err := r.db.QueryContext(ctx, `SELECT `+inventoryColumns+` FROM ticket_inventories WHERE ticket_tier_id=$1 AND deleted_at IS NULL ORDER BY event_session_id`, tierID)
 	if err != nil {
 		return nil, err
 	}
@@ -114,17 +114,20 @@ func (r *TicketRepository) ListInventory(ctx context.Context, tierID uuid.UUID) 
 	return out, rows.Err()
 }
 func (r *TicketRepository) GetInventory(ctx context.Context, tierID, sessionID uuid.UUID) (*models.TicketInventory, error) {
-	return scanInventory(r.db.QueryRowContext(ctx, `SELECT `+inventoryColumns+` FROM ticket_inventories WHERE ticket_tier_id=$1 AND event_session_id=$2`, tierID, sessionID))
+	return scanInventory(r.db.QueryRowContext(ctx, `SELECT `+inventoryColumns+` FROM ticket_inventories WHERE ticket_tier_id=$1 AND event_session_id=$2 AND deleted_at IS NULL`, tierID, sessionID))
 }
 func (r *TicketRepository) UpdateInventory(ctx context.Context, tierID, sessionID uuid.UUID, q *dto.UpdateInventoryRequest) (*models.TicketInventory, error) {
 	return scanInventory(r.db.QueryRowContext(ctx, `UPDATE ticket_inventories SET total_quota=COALESCE($3,total_quota),sold_count=COALESCE($4,sold_count),held_count=COALESCE($5,held_count),version=version+1,updated_at=NOW() WHERE ticket_tier_id=$1 AND event_session_id=$2 AND COALESCE($3,total_quota)>=COALESCE($4,sold_count)+COALESCE($5,held_count) RETURNING `+inventoryColumns, tierID, sessionID, q.TotalQuota, q.SoldCount, q.HeldCount))
 }
 func (r *TicketRepository) DeleteInventory(ctx context.Context, tierID, sessionID uuid.UUID) error {
-	res, e := r.db.ExecContext(ctx, `DELETE FROM ticket_inventories WHERE ticket_tier_id=$1 AND event_session_id=$2`, tierID, sessionID)
+	res, e := r.db.ExecContext(ctx, `UPDATE ticket_inventories SET deleted_at=NOW() WHERE ticket_tier_id=$1 AND event_session_id=$2 AND deleted_at IS NULL`, tierID, sessionID)
 	if e != nil {
 		return e
 	}
-	n, _ := res.RowsAffected()
+	n, e := res.RowsAffected()
+	if e != nil {
+		return e
+	}
 	if n == 0 {
 		return sql.ErrNoRows
 	}

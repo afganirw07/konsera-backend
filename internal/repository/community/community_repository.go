@@ -15,14 +15,14 @@ type Repository struct{ db *sql.DB }
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 func scanReview(s interface{ Scan(...any) error }) (*models.Review, error) {
 	x := &models.Review{}
-	e := s.Scan(&x.ID, &x.EventID, &x.UserID, &x.BookingID, &x.Rating, &x.Comment, pq.Array(&x.PhotoURLs), &x.Status, &x.CreatedAt)
+	e := s.Scan(&x.ID, &x.EventID, &x.UserID, &x.BookingID, &x.Rating, &x.Comment, pq.Array(&x.PhotoURLs), &x.Status, &x.CreatedAt, &x.DeletedAt)
 	return x, e
 }
 
-const reviewCols = `id,event_id,user_id,booking_id,rating,comment,photo_urls,status,created_at`
+const reviewCols = `id,event_id,user_id,booking_id,rating,comment,photo_urls,status,created_at,deleted_at`
 
 func (r *Repository) Reviews(ctx context.Context, event *uuid.UUID) ([]*models.Review, error) {
-	rows, e := r.db.QueryContext(ctx, `SELECT `+reviewCols+` FROM reviews WHERE ($1::uuid IS NULL OR event_id=$1) ORDER BY created_at DESC`, event)
+	rows, e := r.db.QueryContext(ctx, `SELECT `+reviewCols+` FROM reviews WHERE deleted_at IS NULL AND ($1::uuid IS NULL OR event_id=$1) ORDER BY created_at DESC`, event)
 	if e != nil {
 		return nil, e
 	}
@@ -38,7 +38,7 @@ func (r *Repository) Reviews(ctx context.Context, event *uuid.UUID) ([]*models.R
 	return out, rows.Err()
 }
 func (r *Repository) Review(ctx context.Context, user, id uuid.UUID) (*models.Review, error) {
-	return scanReview(r.db.QueryRowContext(ctx, `SELECT `+reviewCols+` FROM reviews WHERE user_id=$1 AND id=$2`, user, id))
+	return scanReview(r.db.QueryRowContext(ctx, `SELECT `+reviewCols+` FROM reviews WHERE user_id=$1 AND id=$2 AND deleted_at IS NULL`, user, id))
 }
 func (r *Repository) CreateReview(ctx context.Context, x *models.Review) error {
 	y, e := scanReview(r.db.QueryRowContext(ctx, `INSERT INTO reviews(event_id,user_id,booking_id,rating,comment,photo_urls) VALUES($1,$2,$3,$4,$5,$6) RETURNING `+reviewCols, x.EventID, x.UserID, x.BookingID, x.Rating, x.Comment, pq.Array(x.PhotoURLs)))
@@ -49,14 +49,17 @@ func (r *Repository) CreateReview(ctx context.Context, x *models.Review) error {
 	return nil
 }
 func (r *Repository) UpdateReview(ctx context.Context, user, id uuid.UUID, q *dto.UpdateReviewRequest) (*models.Review, error) {
-	return scanReview(r.db.QueryRowContext(ctx, `UPDATE reviews SET rating=COALESCE($3,rating),comment=COALESCE($4,comment),photo_urls=COALESCE($5,photo_urls),status=COALESCE($6,status) WHERE user_id=$1 AND id=$2 RETURNING `+reviewCols, user, id, q.Rating, q.Comment, pq.Array(q.PhotoURLs), q.Status))
+	return scanReview(r.db.QueryRowContext(ctx, `UPDATE reviews SET rating=COALESCE($3,rating),comment=COALESCE($4,comment),photo_urls=COALESCE($5,photo_urls),status=COALESCE($6,status) WHERE user_id=$1 AND id=$2 AND deleted_at IS NULL RETURNING `+reviewCols, user, id, q.Rating, q.Comment, pq.Array(q.PhotoURLs), q.Status))
 }
 func (r *Repository) DeleteReview(ctx context.Context, user, id uuid.UUID) error {
-	res, e := r.db.ExecContext(ctx, `DELETE FROM reviews WHERE user_id=$1 AND id=$2`, user, id)
+	res, e := r.db.ExecContext(ctx, `UPDATE reviews SET deleted_at=NOW() WHERE user_id=$1 AND id=$2 AND deleted_at IS NULL`, user, id)
 	if e != nil {
 		return e
 	}
-	n, _ := res.RowsAffected()
+	n, e := res.RowsAffected()
+	if e != nil {
+		return e
+	}
 	if n == 0 {
 		return sql.ErrNoRows
 	}
