@@ -28,6 +28,7 @@ import (
 	communityService "konsera-backend/internal/services/community"
 	email "konsera-backend/internal/services/email"
 	eventService "konsera-backend/internal/services/event"
+	imageuploadService "konsera-backend/internal/services/imageupload"
 	notificationService "konsera-backend/internal/services/notification"
 	organizerService "konsera-backend/internal/services/organizer"
 	promoService "konsera-backend/internal/services/promo"
@@ -52,6 +53,12 @@ type Server struct {
 func New() (*Server, error) {
 	// CONFIG
 	emailConfig := config.LoadEmailConfig()
+	imageUploadConfig := config.LoadImageUploadConfig()
+
+	imageUploader := imageuploadService.NewService(imageuploadService.Config{
+		Path:   imageUploadConfig.Path,
+		APIKey: imageUploadConfig.APIKey,
+	})
 
 	// DATABASE
 	db, err := database.ConnectDatabase()
@@ -82,7 +89,7 @@ func New() (*Server, error) {
 	venueRepo := venueRepository.NewVenueRepository(db.DB)
 
 	// SERVICE
-	userService := userService.NewUserService(userRepo, emailService, db.DB)
+	userService := userService.NewUserService(userRepo, emailService, db.DB, imageUploader)
 	organizerService := organizerService.NewOrganizerService(organizerRepo)
 	venueService := venueService.NewVenueService(venueRepo)
 
@@ -91,13 +98,13 @@ func New() (*Server, error) {
 	organizerHandler := organizerHandler.NewOrganizerHandler(organizerService)
 	venueHandler := venueHandler.NewVenueHandler(venueService)
 	eventRepo := eventRepository.NewEventRepository(db.DB)
-	eventSvc := eventService.NewEventService(eventRepo)
+	eventSvc := eventService.NewEventService(eventRepo, imageUploader)
 	eventH := eventHandler.NewEventHandler(eventSvc)
 	ticketRepo := ticketRepository.NewTicketRepository(db.DB)
 	ticketSvc := ticketService.NewTicketService(ticketRepo)
 	ticketH := ticketHandler.NewTicketHandler(ticketSvc)
 	checkoutRepo := checkoutRepository.NewRepository(db.DB)
-	checkoutSvc := checkoutService.NewService(checkoutRepo)
+	checkoutSvc := checkoutService.NewService(checkoutRepo, imageUploader)
 	checkoutH := checkoutHandler.NewHandler(checkoutSvc)
 	promoRepo := promoRepository.NewRepository(db.DB)
 	promoSvc := promoService.NewService(promoRepo)
@@ -106,7 +113,7 @@ func New() (*Server, error) {
 	notificationSvc := notificationService.NewService(notificationRepo)
 	notificationH := notificationHandler.NewHandler(notificationSvc)
 	communityRepo := communityRepository.NewRepository(db.DB)
-	communitySvc := communityService.NewService(communityRepo)
+	communitySvc := communityService.NewService(communityRepo, imageUploader)
 	communityH := communityHandler.NewHandler(communitySvc)
 
 	// ROUTER
@@ -139,6 +146,12 @@ func New() (*Server, error) {
 		authGroup.POST("/verify-otp/:profile_id/:code", authRateLimiter.Middleware(), userHandler.VerifyOTPParams)
 		authGroup.POST("/resend-otp", authRateLimiter.Middleware(), userHandler.ResendOTP)
 		authGroup.POST("/users/preferences", appMiddleware.Auth(), userHandler.CreateUserPreference)
+	}
+
+	userGroup := router.Group("/users")
+	userGroup.Use(appMiddleware.Auth(), organizerRateLimiter.Middleware())
+	{
+		userGroup.POST("/me/avatar", userHandler.UploadProfileAvatar)
 	}
 
 	organizerGroup := router.Group("/organizers")
@@ -185,6 +198,7 @@ func New() (*Server, error) {
 		eventGroup.GET("", eventH.Events)
 		eventGroup.GET("/:event_id", eventH.Get)
 		eventGroup.PUT("/:event_id", eventMutationRoles, eventH.Update)
+		eventGroup.POST("/:event_id/images", eventMutationRoles, eventH.UploadEventImages)
 		eventGroup.DELETE("/:event_id", eventMutationRoles, eventH.Delete)
 		eventGroup.POST("/:event_id/sessions", eventMutationRoles, eventH.CreateSession)
 		eventGroup.GET("/:event_id/sessions", eventH.Sessions)
@@ -200,6 +214,7 @@ func New() (*Server, error) {
 		categoryGroup.GET("", eventH.Categories)
 		categoryGroup.GET("/:category_id", eventH.GetCategory)
 		categoryGroup.PUT("/:category_id", eventMutationRoles, eventH.UpdateCategory)
+		categoryGroup.POST("/:category_id/icon", eventMutationRoles, eventH.UploadCategoryIcon)
 		categoryGroup.DELETE("/:category_id", eventMutationRoles, eventH.DeleteCategory)
 	}
 
@@ -210,6 +225,7 @@ func New() (*Server, error) {
 		artistGroup.GET("", eventH.Artists)
 		artistGroup.GET("/:artist_id", eventH.GetArtist)
 		artistGroup.PUT("/:artist_id", eventMutationRoles, eventH.UpdateArtist)
+		artistGroup.POST("/:artist_id/photo", eventMutationRoles, eventH.UploadArtistPhoto)
 		artistGroup.DELETE("/:artist_id", eventMutationRoles, eventH.DeleteArtist)
 	}
 
@@ -293,6 +309,7 @@ func New() (*Server, error) {
 	{
 		paymentMethodGroup.POST("", checkoutH.CreateMethod)
 		paymentMethodGroup.PUT("/:payment_method_id", checkoutH.UpdateMethod)
+		paymentMethodGroup.POST("/:payment_method_id/icon", checkoutH.UploadPaymentMethodIcon)
 		paymentMethodGroup.DELETE("/:payment_method_id", checkoutH.DeleteMethod)
 	}
 
@@ -317,6 +334,7 @@ func New() (*Server, error) {
 		communityGroup.GET("/reviews/:review_id", communityH.GetReview)
 		communityGroup.POST("/reviews", communityH.CreateReview)
 		communityGroup.PUT("/reviews/:review_id", communityH.UpdateReview)
+		communityGroup.POST("/reviews/:review_id/photos", communityH.UploadReviewPhotos)
 		communityGroup.DELETE("/reviews/:review_id", communityH.DeleteReview)
 		communityGroup.GET("/favorites", communityH.Favorites)
 		communityGroup.POST("/favorites", communityH.CreateFavorite)

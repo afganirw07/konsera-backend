@@ -6,6 +6,7 @@ import (
 	dto "konsera-backend/internal/DTO/community"
 	"konsera-backend/internal/helpers"
 	svc "konsera-backend/internal/services/community"
+	"konsera-backend/internal/services/imageupload"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,6 +18,16 @@ func fail(c *gin.Context, e error) {
 	st := 400
 	if errors.Is(e, sql.ErrNoRows) {
 		st = 404
+	}
+	helpers.Error(c, st, e.Error(), nil)
+}
+func uploadFail(c *gin.Context, e error) {
+	st := 500
+	switch {
+	case errors.Is(e, sql.ErrNoRows):
+		st = 404
+	case errors.Is(e, imageupload.ErrInvalidImage):
+		st = 400
 	}
 	helpers.Error(c, st, e.Error(), nil)
 }
@@ -68,6 +79,38 @@ func (h *Handler) UpdateReview(c *gin.Context) {
 	}
 	helpers.Success(c, 200, "Review updated successfully", x)
 }
+
+// @Summary Upload review photos
+// @Tags Community
+// @Accept mpfd
+// @Produce json
+// @Security BearerAuth
+// @Param review_id path string true "Review ID"
+// @Param files formData file true "Review photos"
+// @Success 200 {object} models.Review
+// @Router /community/reviews/{review_id}/photos [post]
+func (h *Handler) UploadReviewPhotos(c *gin.Context) {
+	form, err := c.MultipartForm()
+	if err != nil {
+		helpers.Error(c, 400, "multipart form is required", err.Error())
+		return
+	}
+	defer form.RemoveAll()
+
+	files := form.File["files"]
+	if len(files) == 0 {
+		helpers.Error(c, 400, "at least one photo file is required", nil)
+		return
+	}
+
+	x, e := h.s.UploadReviewPhotos(c, uid(c), c.Param("review_id"), files)
+	if e != nil {
+		uploadFail(c, e)
+		return
+	}
+	helpers.Success(c, 200, "Review photos uploaded successfully", x)
+}
+
 func (h *Handler) DeleteReview(c *gin.Context) {
 	if e := h.s.DeleteReview(c, uid(c), c.Param("review_id")); e != nil {
 		fail(c, e)

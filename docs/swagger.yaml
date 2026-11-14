@@ -428,6 +428,21 @@ definitions:
       status:
         type: string
     type: object
+  models.PaymentMethod:
+    properties:
+      icon_url:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      provider:
+        type: string
+      type:
+        type: string
+    type: object
   models.PromoCode:
     properties:
       code:
@@ -468,6 +483,31 @@ definitions:
       promo_code_id:
         type: string
       used_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  models.Review:
+    properties:
+      booking_id:
+        type: string
+      comment:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      event_id:
+        type: string
+      id:
+        type: string
+      photo_urls:
+        items:
+          type: string
+        type: array
+      rating:
+        type: integer
+      status:
         type: string
       user_id:
         type: string
@@ -533,6 +573,35 @@ definitions:
       updated_at:
         type: string
       venue_section_id:
+        type: string
+    type: object
+  models.UserProfile:
+    properties:
+      address_line:
+        type: string
+      avatar_url:
+        type: string
+      city:
+        type: string
+      country:
+        type: string
+      created_at:
+        type: string
+      date_of_birth:
+        type: string
+      full_name:
+        type: string
+      gender:
+        type: string
+      id:
+        type: string
+      postal_code:
+        type: string
+      province:
+        type: string
+      updated_at:
+        type: string
+      user_id:
         type: string
     type: object
   models.Venue:
@@ -982,6 +1051,33 @@ paths:
       summary: Create artist
       tags:
       - Artists
+  /artists/{artist_id}/photo:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Artist ID
+        in: path
+        name: artist_id
+        required: true
+        type: string
+      - description: Artist photo
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Artist'
+      security:
+      - BearerAuth: []
+      summary: Upload artist photo
+      tags:
+      - Artists
   /auth/login:
     post:
       consumes:
@@ -1180,6 +1276,33 @@ paths:
       summary: Apply promo code
       tags:
       - Promo Codes
+  /community/reviews/{review_id}/photos:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Review ID
+        in: path
+        name: review_id
+        required: true
+        type: string
+      - description: Review photos
+        in: formData
+        name: files
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Review'
+      security:
+      - BearerAuth: []
+      summary: Upload review photos
+      tags:
+      - Community
   /event-categories:
     get:
       produces:
@@ -1284,6 +1407,33 @@ paths:
       summary: Update category
       tags:
       - Event Categories
+  /event-categories/{category_id}/icon:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Category ID
+        in: path
+        name: category_id
+        required: true
+        type: string
+      - description: Category icon
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.EventCategory'
+      security:
+      - BearerAuth: []
+      summary: Upload category icon
+      tags:
+      - Event Categories
   /events:
     get:
       produces:
@@ -1386,6 +1536,36 @@ paths:
       security:
       - BearerAuth: []
       summary: Update event
+      tags:
+      - Events
+  /events/{event_id}/images:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Event ID
+        in: path
+        name: event_id
+        required: true
+        type: string
+      - description: Event poster
+        in: formData
+        name: poster
+        type: file
+      - description: Event banner
+        in: formData
+        name: banner
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Event'
+      security:
+      - BearerAuth: []
+      summary: Upload event images
       tags:
       - Events
   /events/{event_id}/sessions:
@@ -2102,6 +2282,33 @@ paths:
       summary: Update organizer verification
       tags:
       - Organizer Verifications
+  /payment-methods/{payment_method_id}/icon:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Payment method ID
+        in: path
+        name: payment_method_id
+        required: true
+        type: string
+      - description: Payment method icon
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PaymentMethod'
+      security:
+      - BearerAuth: []
+      summary: Upload payment method icon
+      tags:
+      - Payment Methods
   /promo-codes:
     get:
       produces:
@@ -2234,6 +2441,33 @@ paths:
       summary: Create inventory
       tags:
       - Ticket Inventories
+  /users/me/avatar:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Profile avatar
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserProfile'
+        "400":
+          description: Invalid or unsupported image
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Upload profile avatar
+      tags:
+      - Users
   /venues:
     get:
       produces:

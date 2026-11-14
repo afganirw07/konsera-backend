@@ -6,14 +6,21 @@ import (
 	dto "konsera-backend/internal/DTO/checkout"
 	"konsera-backend/internal/models"
 	repo "konsera-backend/internal/repository/checkout"
+	"konsera-backend/internal/services/imageupload"
+	"mime/multipart"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-type Service struct{ repo *repo.Repository }
+type Service struct {
+	repo     *repo.Repository
+	uploader imageupload.Uploader
+}
 
-func NewService(r *repo.Repository) *Service { return &Service{repo: r} }
+func NewService(r *repo.Repository, uploader imageupload.Uploader) *Service {
+	return &Service{repo: r, uploader: uploader}
+}
 func uid(v, n string) (uuid.UUID, error) {
 	x, e := uuid.Parse(v)
 	if e != nil {
@@ -160,6 +167,17 @@ func (s *Service) UpdateMethod(c context.Context, v string, q *dto.UpdatePayment
 		return nil, e
 	}
 	return s.repo.UpdateMethod(c, id, q)
+}
+func (s *Service) UploadPaymentMethodIcon(c context.Context, v string, file *multipart.FileHeader) (*models.PaymentMethod, error) {
+	id, e := uid(v, "payment_method_id")
+	if e != nil {
+		return nil, e
+	}
+	url, e := s.uploader.Upload(c, file)
+	if e != nil {
+		return nil, e
+	}
+	return s.repo.UpdatePaymentMethodIcon(c, id, url)
 }
 func (s *Service) DeleteMethod(c context.Context, v string) error {
 	id, e := uid(v, "payment_method_id")

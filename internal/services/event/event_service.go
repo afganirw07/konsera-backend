@@ -6,13 +6,20 @@ import (
 	dto "konsera-backend/internal/DTO/event"
 	"konsera-backend/internal/models"
 	repo "konsera-backend/internal/repository/event"
+	"konsera-backend/internal/services/imageupload"
+	"mime/multipart"
 
 	"github.com/google/uuid"
 )
 
-type EventService struct{ repo *repo.EventRepository }
+type EventService struct {
+	repo     *repo.EventRepository
+	uploader imageupload.Uploader
+}
 
-func NewEventService(r *repo.EventRepository) *EventService { return &EventService{repo: r} }
+func NewEventService(r *repo.EventRepository, uploader imageupload.Uploader) *EventService {
+	return &EventService{repo: r, uploader: uploader}
+}
 func id(v, n string) (uuid.UUID, error) {
 	x, e := uuid.Parse(v)
 	if e != nil {
@@ -52,6 +59,17 @@ func (s *EventService) UpdateCategory(c context.Context, v string, q *dto.Update
 		return nil, e
 	}
 	return s.repo.UpdateCategory(c, x, q)
+}
+func (s *EventService) UploadCategoryIcon(c context.Context, v string, file *multipart.FileHeader) (*models.EventCategory, error) {
+	x, e := id(v, "category_id")
+	if e != nil {
+		return nil, e
+	}
+	url, e := s.uploader.Upload(c, file)
+	if e != nil {
+		return nil, e
+	}
+	return s.repo.UpdateCategoryIcon(c, x, url)
 }
 func (s *EventService) DeleteCategory(c context.Context, v string) error {
 	x, e := id(v, "category_id")
@@ -111,6 +129,33 @@ func (s *EventService) Update(c context.Context, v string, q *dto.UpdateEventReq
 		}
 	}
 	return out, e
+}
+func (s *EventService) UploadEventImages(c context.Context, v string, poster, banner *multipart.FileHeader) (*models.Event, error) {
+	x, e := id(v, "event_id")
+	if e != nil {
+		return nil, e
+	}
+	if poster == nil && banner == nil {
+		return nil, fmt.Errorf("poster or banner file is required")
+	}
+
+	var posterURL, bannerURL *string
+	if poster != nil {
+		url, e := s.uploader.Upload(c, poster)
+		if e != nil {
+			return nil, e
+		}
+		posterURL = &url
+	}
+	if banner != nil {
+		url, e := s.uploader.Upload(c, banner)
+		if e != nil {
+			return nil, e
+		}
+		bannerURL = &url
+	}
+
+	return s.repo.UpdateEventImages(c, x, posterURL, bannerURL)
 }
 func (s *EventService) Delete(c context.Context, v string) error {
 	x, e := id(v, "event_id")
@@ -197,6 +242,17 @@ func (s *EventService) UpdateArtist(c context.Context, v string, q *dto.UpdateAr
 		return nil, e
 	}
 	return s.repo.UpdateArtist(c, x, q)
+}
+func (s *EventService) UploadArtistPhoto(c context.Context, v string, file *multipart.FileHeader) (*models.Artist, error) {
+	x, e := id(v, "artist_id")
+	if e != nil {
+		return nil, e
+	}
+	url, e := s.uploader.Upload(c, file)
+	if e != nil {
+		return nil, e
+	}
+	return s.repo.UpdateArtistPhoto(c, x, url)
 }
 func (s *EventService) DeleteArtist(c context.Context, v string) error {
 	x, e := id(v, "artist_id")

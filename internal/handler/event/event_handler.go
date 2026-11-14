@@ -6,6 +6,7 @@ import (
 	dto "konsera-backend/internal/DTO/event"
 	"konsera-backend/internal/helpers"
 	service "konsera-backend/internal/services/event"
+	"konsera-backend/internal/services/imageupload"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,6 +18,16 @@ func fail(c *gin.Context, e error) {
 	st := 400
 	if errors.Is(e, sql.ErrNoRows) {
 		st = 404
+	}
+	helpers.Error(c, st, e.Error(), nil)
+}
+func uploadFail(c *gin.Context, e error) {
+	st := 500
+	switch {
+	case errors.Is(e, sql.ErrNoRows):
+		st = 404
+	case errors.Is(e, imageupload.ErrInvalidImage):
+		st = 400
 	}
 	helpers.Error(c, st, e.Error(), nil)
 }
@@ -100,6 +111,29 @@ func (h *EventHandler) UpdateCategory(c *gin.Context) {
 		return
 	}
 	helpers.Success(c, 200, "Category updated successfully", x)
+}
+
+// @Summary Upload category icon
+// @Tags Event Categories
+// @Accept mpfd
+// @Produce json
+// @Security BearerAuth
+// @Param category_id path string true "Category ID"
+// @Param file formData file true "Category icon"
+// @Success 200 {object} models.EventCategory
+// @Router /event-categories/{category_id}/icon [post]
+func (h *EventHandler) UploadCategoryIcon(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		helpers.Error(c, 400, "file is required", err.Error())
+		return
+	}
+	x, e := h.s.UploadCategoryIcon(c, c.Param("category_id"), file)
+	if e != nil {
+		uploadFail(c, e)
+		return
+	}
+	helpers.Success(c, 200, "Category icon uploaded successfully", x)
 }
 
 // @Summary Delete category
@@ -189,6 +223,31 @@ func (h *EventHandler) Update(c *gin.Context) {
 		return
 	}
 	helpers.Success(c, 200, "Event updated successfully", x)
+}
+
+// @Summary Upload event images
+// @Tags Events
+// @Accept mpfd
+// @Produce json
+// @Security BearerAuth
+// @Param event_id path string true "Event ID"
+// @Param poster formData file false "Event poster"
+// @Param banner formData file false "Event banner"
+// @Success 200 {object} models.Event
+// @Router /events/{event_id}/images [post]
+func (h *EventHandler) UploadEventImages(c *gin.Context) {
+	poster, _ := c.FormFile("poster")
+	banner, _ := c.FormFile("banner")
+	if poster == nil && banner == nil {
+		helpers.Error(c, 400, "poster or banner file is required", nil)
+		return
+	}
+	x, e := h.s.UploadEventImages(c, c.Param("event_id"), poster, banner)
+	if e != nil {
+		uploadFail(c, e)
+		return
+	}
+	helpers.Success(c, 200, "Event images uploaded successfully", x)
 }
 
 // @Summary Delete event
@@ -311,6 +370,30 @@ func (h *EventHandler) UpdateArtist(c *gin.Context) {
 	}
 	helpers.Success(c, 200, "Artist updated successfully", x)
 }
+
+// @Summary Upload artist photo
+// @Tags Artists
+// @Accept mpfd
+// @Produce json
+// @Security BearerAuth
+// @Param artist_id path string true "Artist ID"
+// @Param file formData file true "Artist photo"
+// @Success 200 {object} models.Artist
+// @Router /artists/{artist_id}/photo [post]
+func (h *EventHandler) UploadArtistPhoto(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		helpers.Error(c, 400, "file is required", err.Error())
+		return
+	}
+	x, e := h.s.UploadArtistPhoto(c, c.Param("artist_id"), file)
+	if e != nil {
+		uploadFail(c, e)
+		return
+	}
+	helpers.Success(c, 200, "Artist photo uploaded successfully", x)
+}
+
 func (h *EventHandler) DeleteArtist(c *gin.Context) {
 	if e := h.s.DeleteArtist(c, c.Param("artist_id")); e != nil {
 		fail(c, e)

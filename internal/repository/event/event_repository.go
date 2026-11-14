@@ -45,6 +45,12 @@ func (r *EventRepository) UpdateCategory(ctx context.Context, id uuid.UUID, q *d
 	err := scan(e, &x.ID, &x.Name, &x.Slug, &x.IconURL)
 	return x, err
 }
+func (r *EventRepository) UpdateCategoryIcon(ctx context.Context, id uuid.UUID, url string) (*models.EventCategory, error) {
+	x := &models.EventCategory{}
+	e := r.db.QueryRowContext(ctx, "UPDATE event_categories SET icon_url=$2 WHERE id=$1 AND deleted_at IS NULL RETURNING id,name,slug,icon_url", id, url)
+	err := scan(e, &x.ID, &x.Name, &x.Slug, &x.IconURL)
+	return x, err
+}
 func (r *EventRepository) DeleteCategory(ctx context.Context, id uuid.UUID) error {
 	res, e := r.db.ExecContext(ctx, "UPDATE event_categories SET deleted_at=NOW() WHERE id=$1 AND deleted_at IS NULL", id)
 	if e != nil {
@@ -96,6 +102,9 @@ func (r *EventRepository) CreateEvent(ctx context.Context, x *models.Event) erro
 }
 func (r *EventRepository) UpdateEvent(ctx context.Context, id uuid.UUID, q *dto.UpdateEventRequest) (*models.Event, error) {
 	return scanEvent(r.db.QueryRowContext(ctx, "UPDATE events SET organizer_id=COALESCE($2,organizer_id),venue_id=COALESCE($3,venue_id),title=COALESCE($4,title),slug=COALESCE($5,slug),description=COALESCE($6,description),poster_url=COALESCE($7,poster_url),banner_url=COALESCE($8,banner_url),status=COALESCE($9,status),is_featured=COALESCE($10,is_featured),terms_and_conditions=COALESCE($11,terms_and_conditions),refund_policy=COALESCE($12,refund_policy),rejection_reason=COALESCE($13,rejection_reason) WHERE id=$1 AND deleted_at IS NULL RETURNING "+eventCols, id, q.OrganizerID, q.VenueID, q.Title, q.Slug, q.Description, q.PosterURL, q.BannerURL, q.Status, q.IsFeatured, q.TermsAndConditions, q.RefundPolicy, q.RejectionReason))
+}
+func (r *EventRepository) UpdateEventImages(ctx context.Context, id uuid.UUID, posterURL, bannerURL *string) (*models.Event, error) {
+	return scanEvent(r.db.QueryRowContext(ctx, "UPDATE events SET poster_url=COALESCE($2,poster_url),banner_url=COALESCE($3,banner_url) WHERE id=$1 AND deleted_at IS NULL RETURNING "+eventCols, id, posterURL, bannerURL))
 }
 func (r *EventRepository) DeleteEvent(ctx context.Context, id uuid.UUID) error {
 	res, e := r.db.ExecContext(ctx, "UPDATE events SET deleted_at=NOW() WHERE id=$1 AND deleted_at IS NULL", id)
@@ -196,6 +205,12 @@ func (r *EventRepository) CreateArtist(ctx context.Context, x *models.Artist) er
 func (r *EventRepository) UpdateArtist(ctx context.Context, id uuid.UUID, q *dto.UpdateArtistRequest) (*models.Artist, error) {
 	x := &models.Artist{}
 	e := r.db.QueryRowContext(ctx, "UPDATE artists SET name=COALESCE($2,name),bio=COALESCE($3,bio),photo_url=COALESCE($4,photo_url) WHERE id=$1 AND deleted_at IS NULL RETURNING id,name,bio,photo_url,created_at", id, q.Name, q.Bio, q.PhotoURL)
+	err := scan(e, &x.ID, &x.Name, &x.Bio, &x.PhotoURL, &x.CreatedAt)
+	return x, err
+}
+func (r *EventRepository) UpdateArtistPhoto(ctx context.Context, id uuid.UUID, url string) (*models.Artist, error) {
+	x := &models.Artist{}
+	e := r.db.QueryRowContext(ctx, "UPDATE artists SET photo_url=$2 WHERE id=$1 AND deleted_at IS NULL RETURNING id,name,bio,photo_url,created_at", id, url)
 	err := scan(e, &x.ID, &x.Name, &x.Bio, &x.PhotoURL, &x.CreatedAt)
 	return x, err
 }

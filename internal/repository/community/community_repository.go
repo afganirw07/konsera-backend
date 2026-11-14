@@ -51,6 +51,9 @@ func (r *Repository) CreateReview(ctx context.Context, x *models.Review) error {
 func (r *Repository) UpdateReview(ctx context.Context, user, id uuid.UUID, q *dto.UpdateReviewRequest) (*models.Review, error) {
 	return scanReview(r.db.QueryRowContext(ctx, `UPDATE reviews SET rating=COALESCE($3,rating),comment=COALESCE($4,comment),photo_urls=COALESCE($5,photo_urls),status=COALESCE($6,status) WHERE user_id=$1 AND id=$2 AND deleted_at IS NULL RETURNING `+reviewCols, user, id, q.Rating, q.Comment, pq.Array(q.PhotoURLs), q.Status))
 }
+func (r *Repository) UpdateReviewPhotos(ctx context.Context, user, id uuid.UUID, urls []string) (*models.Review, error) {
+	return scanReview(r.db.QueryRowContext(ctx, `UPDATE reviews SET photo_urls=$3 WHERE user_id=$1 AND id=$2 AND deleted_at IS NULL RETURNING `+reviewCols, user, id, pq.Array(urls)))
+}
 func (r *Repository) DeleteReview(ctx context.Context, user, id uuid.UUID) error {
 	res, e := r.db.ExecContext(ctx, `UPDATE reviews SET deleted_at=NOW() WHERE user_id=$1 AND id=$2 AND deleted_at IS NULL`, user, id)
 	if e != nil {

@@ -268,6 +268,44 @@ func (r *UserRepository) GetUserProfileByUserID(
 	return profile, nil
 }
 
+func (r *UserRepository) UpdateProfileAvatar(
+	ctx context.Context,
+	userID uuid.UUID,
+	url string,
+) (*user.UserProfile, error) {
+	query := `
+		UPDATE user_profiles
+		SET avatar_url = $1, updated_at = NOW()
+		WHERE user_id = $2
+		RETURNING id, user_id, full_name, avatar_url, date_of_birth,
+		          gender, address_line, city, province, postal_code,
+		          country, created_at, updated_at
+	`
+
+	profile := &user.UserProfile{}
+
+	err := r.db.QueryRowContext(ctx, query, url, userID).Scan(
+		&profile.ID,
+		&profile.UserID,
+		&profile.FullName,
+		&profile.AvatarURL,
+		&profile.DateOfBirth,
+		&profile.Gender,
+		&profile.AddressLine,
+		&profile.City,
+		&profile.Province,
+		&profile.PostalCode,
+		&profile.Country,
+		&profile.CreatedAt,
+		&profile.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return profile, nil
+}
+
 func (r *UserRepository) CreateRoleTx(
 	ctx context.Context,
 	tx *sql.Tx,

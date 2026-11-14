@@ -6,14 +6,21 @@ import (
 	dto "konsera-backend/internal/DTO/community"
 	"konsera-backend/internal/models"
 	repo "konsera-backend/internal/repository/community"
+	"konsera-backend/internal/services/imageupload"
+	"mime/multipart"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-type Service struct{ repo *repo.Repository }
+type Service struct {
+	repo     *repo.Repository
+	uploader imageupload.Uploader
+}
 
-func NewService(r *repo.Repository) *Service { return &Service{repo: r} }
+func NewService(r *repo.Repository, uploader imageupload.Uploader) *Service {
+	return &Service{repo: r, uploader: uploader}
+}
 func id(v, n string) (uuid.UUID, error) {
 	x, e := uuid.Parse(v)
 	if e != nil {
@@ -70,6 +77,30 @@ func (s *Service) UpdateReview(c context.Context, user, v string, q *dto.UpdateR
 		return nil, e
 	}
 	return s.repo.UpdateReview(c, u, x, q)
+}
+func (s *Service) UploadReviewPhotos(c context.Context, user, v string, files []*multipart.FileHeader) (*models.Review, error) {
+	u, e := id(user, "user_id")
+	if e != nil {
+		return nil, e
+	}
+	x, e := id(v, "review_id")
+	if e != nil {
+		return nil, e
+	}
+	if len(files) == 0 {
+		return nil, fmt.Errorf("at least one photo file is required")
+	}
+
+	urls := make([]string, 0, len(files))
+	for _, file := range files {
+		url, e := s.uploader.Upload(c, file)
+		if e != nil {
+			return nil, e
+		}
+		urls = append(urls, url)
+	}
+
+	return s.repo.UpdateReviewPhotos(c, u, x, urls)
 }
 func (s *Service) DeleteReview(c context.Context, user, v string) error {
 	u, e := id(user, "user_id")

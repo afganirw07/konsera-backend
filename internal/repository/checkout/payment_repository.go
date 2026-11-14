@@ -36,6 +36,9 @@ func (r *Repository) CreateMethod(ctx context.Context, x *models.PaymentMethod) 
 func (r *Repository) UpdateMethod(ctx context.Context, id uuid.UUID, q *checkout.UpdatePaymentMethodRequest) (*models.PaymentMethod, error) {
 	return scanMethod(r.db.QueryRowContext(ctx, `UPDATE payment_methods SET name=COALESCE($2,name),type=COALESCE($3,type),provider=COALESCE($4,provider),is_active=COALESCE($5,is_active),icon_url=COALESCE($6,icon_url) WHERE id=$1 AND deleted_at IS NULL RETURNING id,name,type,provider,is_active,icon_url`, id, q.Name, q.Type, q.Provider, q.IsActive, q.IconURL))
 }
+func (r *Repository) UpdatePaymentMethodIcon(ctx context.Context, id uuid.UUID, url string) (*models.PaymentMethod, error) {
+	return scanMethod(r.db.QueryRowContext(ctx, `UPDATE payment_methods SET icon_url=$2 WHERE id=$1 AND deleted_at IS NULL RETURNING id,name,type,provider,is_active,icon_url`, id, url))
+}
 func (r *Repository) DeleteMethod(ctx context.Context, id uuid.UUID) error {
 	res, e := r.db.ExecContext(ctx, `UPDATE payment_methods SET deleted_at=NOW() WHERE id=$1 AND deleted_at IS NULL`, id)
 	if e != nil {

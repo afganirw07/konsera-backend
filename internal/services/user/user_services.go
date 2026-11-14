@@ -9,19 +9,24 @@ import (
 	"konsera-backend/internal/models"
 	userRepo "konsera-backend/internal/repository/user"
 	emailService "konsera-backend/internal/services/email"
+	"konsera-backend/internal/services/imageupload"
 	"konsera-backend/internal/utils"
+	"mime/multipart"
 	"os"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type UserService struct {
 	repo         *userRepo.UserRepository
 	emailService *emailService.Service
 	db           *sql.DB
+	uploader     imageupload.Uploader
 }
 
-func NewUserService(repo *userRepo.UserRepository, emailService *emailService.Service, db *sql.DB) *UserService {
-	return &UserService{repo: repo, emailService: emailService, db: db}
+func NewUserService(repo *userRepo.UserRepository, emailService *emailService.Service, db *sql.DB, uploader imageupload.Uploader) *UserService {
+	return &UserService{repo: repo, emailService: emailService, db: db, uploader: uploader}
 }
 
 func (s *UserService) CreateUser(
@@ -447,4 +452,22 @@ func (s *UserService) CreateUserPreference(
 		CreatedAt:      userPref.CreatedAt,
 		UpdatedAt:      userPref.UpdatedAt,
 	}, nil
+}
+
+func (s *UserService) UploadProfileAvatar(
+	ctx context.Context,
+	userID string,
+	file *multipart.FileHeader,
+) (*models.UserProfile, error) {
+	id, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, fmt.Errorf("[ERROR] Invalid user_id")
+	}
+
+	url, err := s.uploader.Upload(ctx, file)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.UpdateProfileAvatar(ctx, id, url)
 }

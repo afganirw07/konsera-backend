@@ -1,6 +1,8 @@
 package user
 
 import (
+	"database/sql"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -9,6 +11,7 @@ import (
 	dto "konsera-backend/internal/DTO/user"
 	helpers "konsera-backend/internal/helpers"
 	appMiddleware "konsera-backend/internal/middleware"
+	"konsera-backend/internal/services/imageupload"
 	userService "konsera-backend/internal/services/user"
 
 	"github.com/gin-gonic/gin"
@@ -24,6 +27,17 @@ func NewUserHandler(
 	return &UserHandler{
 		service: service,
 	}
+}
+
+func uploadFail(c *gin.Context, e error) {
+	st := http.StatusInternalServerError
+	switch {
+	case errors.Is(e, sql.ErrNoRows):
+		st = http.StatusNotFound
+	case errors.Is(e, imageupload.ErrInvalidImage):
+		st = http.StatusBadRequest
+	}
+	helpers.Error(c, st, e.Error(), nil)
 }
 
 // @Summary Login user
@@ -252,4 +266,40 @@ func (h *UserHandler) CreateUserPreference(c *gin.Context) {
 	}
 
 	helpers.Success(c, http.StatusCreated, "User preference created successfully", userPreference)
+}
+
+// @Summary Upload profile avatar
+// @Tags Users
+// @Accept mpfd
+// @Produce json
+// @Security BearerAuth
+// @Param file formData file true "Profile avatar"
+// @Success 200 {object} models.UserProfile
+// @Failure 400 {object} map[string]interface{} "Invalid or unsupported image"
+// @Router /users/me/avatar [post]
+func (h *UserHandler) UploadProfileAvatar(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		helpers.Error(c, http.StatusBadRequest, "file is required", err.Error())
+		return
+	}
+
+	value, ok := c.Get(appMiddleware.UserIDKey)
+	if !ok {
+		helpers.Error(c, http.StatusUnauthorized, "Authentication is required", nil)
+		return
+	}
+	userID, ok := value.(string)
+	if !ok || userID == "" {
+		helpers.Error(c, http.StatusUnauthorized, "Authentication is required", nil)
+		return
+	}
+
+	profile, err := h.service.UploadProfileAvatar(c.Request.Context(), userID, file)
+	if err != nil {
+		uploadFail(c, err)
+		return
+	}
+
+	helpers.Success(c, http.StatusOK, "Profile avatar uploaded successfully", profile)
 }

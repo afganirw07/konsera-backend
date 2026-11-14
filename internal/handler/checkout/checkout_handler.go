@@ -6,6 +6,7 @@ import (
 	dto "konsera-backend/internal/DTO/checkout"
 	"konsera-backend/internal/helpers"
 	svc "konsera-backend/internal/services/checkout"
+	"konsera-backend/internal/services/imageupload"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,6 +18,16 @@ func fail(c *gin.Context, e error) {
 	st := 400
 	if errors.Is(e, sql.ErrNoRows) {
 		st = 404
+	}
+	helpers.Error(c, st, e.Error(), nil)
+}
+func uploadFail(c *gin.Context, e error) {
+	st := 500
+	switch {
+	case errors.Is(e, sql.ErrNoRows):
+		st = 404
+	case errors.Is(e, imageupload.ErrInvalidImage):
+		st = 400
 	}
 	helpers.Error(c, st, e.Error(), nil)
 }
@@ -154,6 +165,30 @@ func (h *Handler) UpdateMethod(c *gin.Context) {
 	}
 	helpers.Success(c, 200, "Payment method updated successfully", x)
 }
+
+// @Summary Upload payment method icon
+// @Tags Payment Methods
+// @Accept mpfd
+// @Produce json
+// @Security BearerAuth
+// @Param payment_method_id path string true "Payment method ID"
+// @Param file formData file true "Payment method icon"
+// @Success 200 {object} models.PaymentMethod
+// @Router /payment-methods/{payment_method_id}/icon [post]
+func (h *Handler) UploadPaymentMethodIcon(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		helpers.Error(c, 400, "file is required", err.Error())
+		return
+	}
+	x, e := h.s.UploadPaymentMethodIcon(c, c.Param("payment_method_id"), file)
+	if e != nil {
+		uploadFail(c, e)
+		return
+	}
+	helpers.Success(c, 200, "Payment method icon uploaded successfully", x)
+}
+
 func (h *Handler) DeleteMethod(c *gin.Context) {
 	if e := h.s.DeleteMethod(c, c.Param("payment_method_id")); e != nil {
 		fail(c, e)
