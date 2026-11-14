@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Shell(git:*)",
-      "Shell(ls:*)"
+      "Shell(ls:*)",
+      "Shell(go:*)"
     ],
     "deny": [],
     "defaultMode": "default"

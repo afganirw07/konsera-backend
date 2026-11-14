@@ -54,6 +54,7 @@ func New() (*Server, error) {
 	// CONFIG
 	emailConfig := config.LoadEmailConfig()
 	imageUploadConfig := config.LoadImageUploadConfig()
+	corsConfig := config.LoadCORSConfig()
 
 	imageUploader := imageuploadService.NewService(imageuploadService.Config{
 		Path:   imageUploadConfig.Path,
@@ -123,6 +124,7 @@ func New() (*Server, error) {
 		return nil, err
 	}
 	router.Use(appMiddleware.SecurityHeaders())
+	router.Use(appMiddleware.CORS(corsConfig.AllowedOrigins))
 	loginRateLimiter := appMiddleware.NewRateLimiter(5, time.Minute)
 	authRateLimiter := appMiddleware.NewRateLimiter(20, time.Minute)
 	organizerRateLimiter := appMiddleware.NewRateLimiter(60, time.Minute)
