@@ -3,7 +3,8 @@
     "allow": [
       "Shell(git:*)",
       "Shell(ls:*)",
-      "Shell(go:*)"
+      "Shell(go:*)",
+      "Shell(gofmt:*)"
     ],
     "deny": [],
     "defaultMode": "default"

@@ -7,6 +7,7 @@ import (
 	"konsera-backend/internal/helpers"
 	service "konsera-backend/internal/services/event"
 	"konsera-backend/internal/services/imageupload"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -324,19 +325,30 @@ func (h *EventHandler) DeleteSession(c *gin.Context) {
 
 // @Summary Create artist
 // @Tags Artists
-// @Accept json
+// @Accept json,mpfd
 // @Produce json
 // @Security BearerAuth
 // @Param artist body event.CreateArtistRequest true "Artist"
+// @Param photo formData file false "Artist photo"
 // @Success 201 {object} models.Artist
 // @Router /artists [post]
 func (h *EventHandler) CreateArtist(c *gin.Context) {
 	q := dto.CreateArtistRequest{}
-	if !bind(c, &q) {
+	if e := c.ShouldBind(&q); e != nil {
+		helpers.Error(c, 400, "Invalid request", e.Error())
 		return
 	}
-	x, e := h.s.CreateArtist(c, &q)
+	file, err := c.FormFile("photo")
+	if err != nil && !errors.Is(err, http.ErrMissingFile) && !errors.Is(err, http.ErrNotMultipart) {
+		helpers.Error(c, 400, "Invalid photo", err.Error())
+		return
+	}
+	x, e := h.s.CreateArtist(c, &q, file)
 	if e != nil {
+		if errors.Is(e, imageupload.ErrInvalidImage) {
+			uploadFail(c, e)
+			return
+		}
 		fail(c, e)
 		return
 	}

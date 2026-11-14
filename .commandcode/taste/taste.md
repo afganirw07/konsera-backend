@@ -1,0 +1,1 @@
+- Prefers reusing existing infrastructure/patterns in the codebase (e.g. the already-built image upload service) rather than introducing new implementations when adding a feature. Confidence: 0.5

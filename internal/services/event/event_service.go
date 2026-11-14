@@ -231,7 +231,14 @@ func (s *EventService) Artist(c context.Context, v string) (*models.Artist, erro
 	}
 	return s.repo.Artist(c, x)
 }
-func (s *EventService) CreateArtist(c context.Context, q *dto.CreateArtistRequest) (*models.Artist, error) {
+func (s *EventService) CreateArtist(c context.Context, q *dto.CreateArtistRequest, file *multipart.FileHeader) (*models.Artist, error) {
+	if file != nil {
+		url, e := s.uploader.Upload(c, file)
+		if e != nil {
+			return nil, e
+		}
+		q.PhotoURL = &url
+	}
 	x := &models.Artist{Name: q.Name, Bio: q.Bio, PhotoURL: q.PhotoURL}
 	e := s.repo.CreateArtist(c, x)
 	return x, e

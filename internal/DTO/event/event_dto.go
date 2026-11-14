@@ -56,9 +56,9 @@ type UpdateSessionRequest struct {
 	Status      *string    `json:"status,omitempty"`
 }
 type CreateArtistRequest struct {
-	Name     string  `json:"name" binding:"required,max=150"`
-	Bio      *string `json:"bio,omitempty"`
-	PhotoURL *string `json:"photo_url,omitempty"`
+	Name     string  `json:"name" form:"name" binding:"required,max=150"`
+	Bio      *string `json:"bio,omitempty" form:"bio"`
+	PhotoURL *string `json:"photo_url,omitempty" form:"photo_url"`
 }
 type UpdateArtistRequest struct {
 	Name     *string `json:"name,omitempty" binding:"omitempty,max=150"`
