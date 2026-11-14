@@ -1,4 +1,29 @@
 definitions:
+  checkout.MidtransNotificationRequest:
+    properties:
+      fraud_status:
+        type: string
+      gross_amount:
+        type: string
+      order_id:
+        type: string
+      payment_type:
+        type: string
+      signature_key:
+        type: string
+      status_code:
+        type: string
+      status_message:
+        type: string
+      transaction_id:
+        type: string
+      transaction_status:
+        type: string
+      transaction_time:
+        type: string
+    required:
+    - order_id
+    type: object
   dto.CreateUserPreferenceRequest:
     properties:
       created_at:
@@ -1276,6 +1301,33 @@ paths:
       summary: Apply promo code
       tags:
       - Promo Codes
+  /checkout/midtrans/notification:
+    post:
+      consumes:
+      - application/json
+      description: Webhook endpoint used by Midtrans to report transaction status
+        changes
+      parameters:
+      - description: Midtrans notification
+        in: body
+        name: notification
+        required: true
+        schema:
+          $ref: '#/definitions/checkout.MidtransNotificationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+        "401":
+          description: Invalid signature
+          schema:
+            $ref: '#/definitions/helpers.APIResponse'
+      summary: Midtrans payment notification
+      tags:
+      - Checkout
   /community/reviews/{review_id}/photos:
     post:
       consumes:

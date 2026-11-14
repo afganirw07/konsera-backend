@@ -7,6 +7,7 @@ import (
 	"konsera-backend/internal/helpers"
 	svc "konsera-backend/internal/services/checkout"
 	"konsera-backend/internal/services/imageupload"
+	midtransService "konsera-backend/internal/services/midtrans"
 
 	"github.com/gin-gonic/gin"
 )
@@ -216,6 +217,31 @@ func (h *Handler) CreatePayment(c *gin.Context) {
 	}
 	helpers.Success(c, 201, "Payment created successfully", x)
 }
+
+// @Summary Midtrans payment notification
+// @Description Webhook endpoint used by Midtrans to report transaction status changes
+// @Tags Checkout
+// @Accept json
+// @Produce json
+// @Param notification body checkout.MidtransNotificationRequest true "Midtrans notification"
+// @Success 200 {object} helpers.APIResponse
+// @Failure 401 {object} helpers.APIResponse "Invalid signature"
+// @Router /checkout/midtrans/notification [post]
+func (h *Handler) MidtransNotification(c *gin.Context) {
+	q := dto.MidtransNotificationRequest{}
+	if !bind(c, &q) {
+		return
+	}
+	if e := h.s.HandleMidtransNotification(c, &q); e != nil {
+		if errors.Is(e, midtransService.ErrInvalidSignature) {
+			helpers.Error(c, 401, "Invalid Midtrans signature", nil)
+			return
+		}
+		fail(c, e)
+		return
+	}
+	helpers.Success(c, 200, "Notification processed successfully", nil)
+}
 func (h *Handler) UpdatePayment(c *gin.Context) {
 	q := dto.UpdatePaymentRequest{}
 	if !bind(c, &q) {
@@ -253,7 +279,7 @@ func (h *Handler) UpdateRefund(c *gin.Context) {
 	if !bind(c, &q) {
 		return
 	}
-	x, e := h.s.UpdateRefund(c, c.Param("refund_id"), &q)
+	x, e := h.s.UpdateRefund(c, userID(c), c.Param("refund_id"), &q)
 	if e != nil {
 		fail(c, e)
 		return

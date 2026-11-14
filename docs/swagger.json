@@ -387,6 +387,46 @@
                 }
             }
         },
+        "/checkout/midtrans/notification": {
+            "post": {
+                "description": "Webhook endpoint used by Midtrans to report transaction status changes",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Checkout"
+                ],
+                "summary": "Midtrans payment notification",
+                "parameters": [
+                    {
+                        "description": "Midtrans notification",
+                        "name": "notification",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/checkout.MidtransNotificationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid signature",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/community/reviews/{review_id}/photos": {
             "post": {
                 "security": [
@@ -2928,6 +2968,44 @@
         }
     },
     "definitions": {
+        "checkout.MidtransNotificationRequest": {
+            "type": "object",
+            "required": [
+                "order_id"
+            ],
+            "properties": {
+                "fraud_status": {
+                    "type": "string"
+                },
+                "gross_amount": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "payment_type": {
+                    "type": "string"
+                },
+                "signature_key": {
+                    "type": "string"
+                },
+                "status_code": {
+                    "type": "string"
+                },
+                "status_message": {
+                    "type": "string"
+                },
+                "transaction_id": {
+                    "type": "string"
+                },
+                "transaction_status": {
+                    "type": "string"
+                },
+                "transaction_time": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.CreateUserPreferenceRequest": {
             "type": "object",
             "required": [

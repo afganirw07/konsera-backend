@@ -29,6 +29,7 @@ import (
 	email "konsera-backend/internal/services/email"
 	eventService "konsera-backend/internal/services/event"
 	imageuploadService "konsera-backend/internal/services/imageupload"
+	midtransService "konsera-backend/internal/services/midtrans"
 	notificationService "konsera-backend/internal/services/notification"
 	organizerService "konsera-backend/internal/services/organizer"
 	promoService "konsera-backend/internal/services/promo"
@@ -55,10 +56,20 @@ func New() (*Server, error) {
 	emailConfig := config.LoadEmailConfig()
 	imageUploadConfig := config.LoadImageUploadConfig()
 	corsConfig := config.LoadCORSConfig()
+	midtransConfig := config.LoadMidtransConfig()
 
 	imageUploader := imageuploadService.NewService(imageuploadService.Config{
 		Path:   imageUploadConfig.Path,
 		APIKey: imageUploadConfig.APIKey,
+	})
+
+	midtransClient := midtransService.NewService(midtransService.Config{
+		KeyName:      midtransConfig.KeyName,
+		ServerKey:    midtransConfig.ServerKey,
+		ClientKey:    midtransConfig.ClientKey,
+		IsProduction: midtransConfig.IsProduction,
+		SnapURL:      midtransConfig.SnapURL,
+		CoreURL:      midtransConfig.CoreURL,
 	})
 
 	// DATABASE
@@ -105,7 +116,7 @@ func New() (*Server, error) {
 	ticketSvc := ticketService.NewTicketService(ticketRepo)
 	ticketH := ticketHandler.NewTicketHandler(ticketSvc)
 	checkoutRepo := checkoutRepository.NewRepository(db.DB)
-	checkoutSvc := checkoutService.NewService(checkoutRepo, imageUploader)
+	checkoutSvc := checkoutService.NewService(checkoutRepo, imageUploader, midtransClient)
 	checkoutH := checkoutHandler.NewHandler(checkoutSvc)
 	promoRepo := promoRepository.NewRepository(db.DB)
 	promoSvc := promoService.NewService(promoRepo)
@@ -139,6 +150,8 @@ func New() (*Server, error) {
 		"/swagger/*any",
 		ginSwagger.WrapHandler(swaggerFiles.Handler),
 	)
+
+	router.POST("/checkout/midtrans/notification", checkoutH.MidtransNotification)
 
 	authGroup := router.Group("/auth")
 	{

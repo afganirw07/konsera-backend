@@ -1,6 +1,29 @@
 package checkout
 
-import "time"
+import (
+	"time"
+
+	"konsera-backend/internal/models"
+)
+
+type CheckoutResponse struct {
+	Booking     *models.Booking `json:"booking"`
+	SnapToken   string          `json:"snap_token"`
+	RedirectURL string          `json:"redirect_url"`
+}
+
+type MidtransNotificationRequest struct {
+	OrderID           string `json:"order_id" binding:"required"`
+	StatusCode        string `json:"status_code"`
+	GrossAmount       string `json:"gross_amount"`
+	SignatureKey      string `json:"signature_key"`
+	TransactionID     string `json:"transaction_id"`
+	TransactionStatus string `json:"transaction_status"`
+	FraudStatus       string `json:"fraud_status"`
+	PaymentType       string `json:"payment_type"`
+	TransactionTime   string `json:"transaction_time"`
+	StatusMessage     string `json:"status_message"`
+}
 
 type CreateCartRequest struct {
 	TicketTierID   string  `json:"ticket_tier_id" binding:"required"`

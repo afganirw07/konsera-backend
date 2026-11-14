@@ -47,8 +47,8 @@ func (r *Repository) Refunds(ctx context.Context, user uuid.UUID) ([]*models.Ref
 	}
 	return out, rows.Err()
 }
-func (r *Repository) UpdateRefund(ctx context.Context, id uuid.UUID, q *dto.UpdateRefundRequest) (*models.Refund, error) {
-	return scanRefund(r.db.QueryRowContext(ctx, `UPDATE refunds SET status=$2,processed_at=CASE WHEN $2='processed' THEN NOW() ELSE processed_at END WHERE id=$1 AND deleted_at IS NULL RETURNING `+refundCols, id, q.Status))
+func (r *Repository) UpdateRefund(ctx context.Context, id uuid.UUID, processedBy uuid.UUID, q *dto.UpdateRefundRequest) (*models.Refund, error) {
+	return scanRefund(r.db.QueryRowContext(ctx, `UPDATE refunds SET status=COALESCE($2,status),processed_by=$3,processed_at=CASE WHEN $2='processed' THEN NOW() ELSE processed_at END WHERE id=$1 AND deleted_at IS NULL RETURNING `+refundCols, id, q.Status, processedBy))
 }
 func (r *Repository) DeleteRefund(ctx context.Context, id uuid.UUID) error {
 	res, e := r.db.ExecContext(ctx, `UPDATE refunds SET deleted_at=NOW() WHERE id=$1 AND deleted_at IS NULL`, id)
